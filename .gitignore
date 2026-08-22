@@ -1,0 +1,41 @@
+# Keil C51 编译输出文件
+*.obj          # 目标文件
+*.o            # 目标文件（GCC风格）
+*.lst          # 列表文件
+*.map          # 内存映射文件
+*.m51          # 内存映射文件（C51特定）
+*.bin          # 二进制输出
+*.axf          # ARM/Keil 可执行文件
+*.sct          # 分散加载文件（通常自动生成）
+*.scr          # 脚本文件
+*.lnp          # 链接器临时文件
+*.plg          # 编译日志
+*.htm          # HTML 报告
+*.tra          # 跟踪文件
+*.tmp          # 临时文件
+*.bak          # 备份文件
+*~             # 编辑器备份
+
+# Keil 用户界面及调试配置
+*.uvopt        # 用户选项（调试设置、断点等）
+*.uvoptx       # 同上（新版）
+*.uvguix       # GUI 状态（窗口布局）
+*.uvguix.*     # 不同用户的GUI状态
+*.dbg          # 调试信息
+*.dep          # 依赖文件
+*.crf          # 交叉引用文件
+*.d            # 依赖文件（GCC风格）
+
+# 输出目录（通常由 Keil 自动创建）
+Objects/       # 默认对象文件目录
+Listings/      # 默认列表文件目录
+Output/        # 默认输出目录
+DebugConfig/   # 调试配置文件
+*.build_log.htm # 构建日志
+
+# 其他临时或系统文件
+Thumbs.db      # Windows 缩略图
+.DS_Store      # macOS 元数据
+*.log          # 日志文件
+*.suo          # Visual Studio 用户选项
+*.user         # 用户设置
