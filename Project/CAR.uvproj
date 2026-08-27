@@ -411,6 +411,16 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_motor_dirver.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_light.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_light.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_light.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\bsp_light.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
