@@ -4,6 +4,7 @@
 #include "bsp_motor_dirver.h"
 
 #include "bsp_horn.h"
+#include "bsp_motor_io.h"
 
 void main(void)
 {
@@ -14,6 +15,7 @@ void main(void)
     LED_Init();
     EA = 1;
 
+    Motor_Init();
     while (1)
     {
         // delay_ms(200);
@@ -30,9 +32,17 @@ void main(void)
         //     delay_ms(2000);
         // }
 
-        for (i = 0; i < 28; i++)
-        {
-            Horn_Beep(i, 100);
-        }
+        // for (i = 0; i < 28; i++)
+        // {
+        //     Horn_Beep(i, 100);
+        // }
+        // Motor_SetDirection(MOTOR_FORWARD);
+
+        Motor_RunWithDelay(MOTOR_FORWARD, 70, 2000);
+        // delay_ms(2000);
+        Motor_RunWithDelay(MOTOR_FORWARD, 50, 2000);
+        // delay_ms(2000);
+        Motor_RunWithDelay(MOTOR_FORWARD, 30, 2000);
+        // delay_ms(2000);
     }
 }
