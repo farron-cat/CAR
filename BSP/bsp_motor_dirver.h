@@ -11,7 +11,7 @@
 #define MOTOR_FL_F P16 // 左前轮正转 PWM4P
 #define MOTOR_FL_B P17 // 左前轮反转 PWM4N
 
-void MotorDirver_Config();
+void MotorDirver_PWM_Config();
 
 void Motors_Forward(int speed);         // 前进
 void Motors_Backward(int speed);        // 后退

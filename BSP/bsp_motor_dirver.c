@@ -35,7 +35,7 @@ int speed2duty(int speed)
     return -(speed / 2) + 50;
 }
 
-void MotorDirver_Config(MotorDriverConfig cfg)
+void MotorDirver_PWM_Config(MotorDriverConfig cfg)
 {
     PWMx_InitDefine pwmStruct;
 
@@ -111,7 +111,7 @@ void Motors_Forward(int speed)
     cfg.RL_speed = speed;
     cfg.FR_speed = speed;
     cfg.FL_speed = speed;
-    MotorDirver_Config(cfg);
+    MotorDirver_PWM_Config(cfg);
 }
 
 void Motors_Backward(int speed)
@@ -121,7 +121,7 @@ void Motors_Backward(int speed)
     cfg.RL_speed = -speed;
     cfg.FR_speed = -speed;
     cfg.FL_speed = -speed;
-    MotorDirver_Config(cfg);
+    MotorDirver_PWM_Config(cfg);
 }
 
 // 左平移，dir控制平移方向
@@ -142,7 +142,7 @@ void Motors_Left(int speed, int dir)
         cfg.RL_speed = speed;  // 左后轮向前
     }
 
-    MotorDirver_Config(cfg);
+    MotorDirver_PWM_Config(cfg);
 }
 
 // 右平移
@@ -163,7 +163,7 @@ void Motors_Right(int speed, int dir)
         cfg.RL_speed = -speed; // 左后轮向后
     }
 
-    MotorDirver_Config(cfg);
+    MotorDirver_PWM_Config(cfg);
 }
 
 // 旋转 dir控制旋转方向 顺时针，逆时针
@@ -187,7 +187,7 @@ void Motors_Around(int speed, int dir)
         cfg.RL_speed = speed;
         cfg.FL_speed = speed;
     }
-    MotorDirver_Config(cfg);
+    MotorDirver_PWM_Config(cfg);
 }
 
 // 停止
@@ -198,5 +198,5 @@ void Motors_Stop()
     cfg.RL_speed = 0;
     cfg.FR_speed = 0;
     cfg.FL_speed = 0;
-    MotorDirver_Config(cfg);
+    MotorDirver_PWM_Config(cfg);
 }
