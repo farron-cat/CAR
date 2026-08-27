@@ -5,7 +5,7 @@
 
 void Buzzer_Init(void);
 void Buzzer_Play(u16 freq);
-void Buzzer_beep(u16 tone);
-void Buzzer_alarm();
+void Buzzer_Beep(u16 tone);
+void Buzzer_Alarm();
 
 #endif // BSP_PWM_BUZZER_H

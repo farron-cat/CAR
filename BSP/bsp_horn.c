@@ -1,14 +1,12 @@
 #include "STC8G_H_GPIO.h"
-#include "STC8G_H_PWM.h"
+#include "STC8H_PWM.h"
 #include "STC8G_H_Switch.h"
 #include "STC8G_H_NVIC.h"
+#include "STC8G_H_Delay.h"
 
-#include "bsp_pwm_buzzer.h"
+#include "bsp_horn.h"
+#include "bsp_delay.h"
 
-//			  C`	D`    E`    F`	  G`	A`	  B`    C``
-// u16 hz[] = {1047, 1175, 1319, 1397, 1568, 1760, 1976, 2093};
-//			  C	    D    E 	 F	  G	   A	B	 C`
-// u16 hz[] = {523, 587, 659, 698, 784, 880, 988, 1047};
 u16 code FREQS[] = {
     523 * 1,
     587 * 1,
@@ -40,78 +38,93 @@ u16 code FREQS[] = {
     988 * 8,
 };
 
-// 初始化蜂鸣器GPIO
-void Buzzer_GPIO_Init(void)
+// 初始化喇叭
+void Horn_Init(void)
+{
+    EAXSFR();
+    Horn_GPIO_Init();
+    BUZZER = 0;
+}
+
+// 初始化喇叭GPIO
+void Horn_GPIO_Init(void)
 {
     GPIO_InitTypeDef buzzerInitStruct;
     // 配置P3.4为推挽输出
-    ledInitStruct.Mode = GPIO_OUT_PP;
-    ledInitStruct.Pin = GPIO_Pin_4;
+    buzzerInitStruct.Mode = GPIO_OUT_PP;
+    buzzerInitStruct.Pin = GPIO_Pin_4;
     GPIO_Inilize(GPIO_P3, &buzzerInitStruct);
 }
 
-// 配置蜂鸣器PWM
-void Buzzer_PWM_Config(u16 freq)
+// 配置喇叭PWM
+void Horn_PWM_Config(u16 freq)
 {
-    PWMx_InitDefine pwmStruct;
+    PWMx_InitDefine pwmStruct = {0};
 
     u16 period = (MAIN_Fosc / freq);
 
+    // 先把PWM8引脚切换到P3.4，再配置外设（时序更可靠）
+    PWM8_SW(PWM8_SW_P34);
+
     // 初始化PWM8通道
-    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;   // 模式
-    pwmStruct.PWM_Duty = (u16)period * 0.5; // PWM占空比时间, 0~Period
-    pwmStruct.PWM_EnoSelect = ENO8P;        // 输出通道选择
-    PWM_Configuration(PWM8, &pwmStruct);    // 初始化PWM
+    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1; // 模式
+    pwmStruct.PWM_Duty = period / 2;      // 占空比50%，避开浮点运算
+    pwmStruct.PWM_EnoSelect = ENO8P;      // 输出通道选择
+    PWM_Configuration(PWM8, &pwmStruct);  // 初始化PWM8通道
 
     pwmStruct.PWM_Period = period - 1;    // 周期时间
     pwmStruct.PWM_DeadTime = 0;           // 死区发生器设置
     pwmStruct.PWM_MainOutEnable = ENABLE; // 主输出使能
     pwmStruct.PWM_CEN_Enable = ENABLE;    // 使能计数器
-    PWM_Configuration(PWMB, &pwmStruct);  // 初始化PWM通用寄存器
+    PWM_Configuration(PWMB, &pwmStruct);  // 初始化PWM通用寄存器(周期/使能)
 
-    PWM8_SW(PWM8_SW_P34); // PWM8_SW_P34
     NVIC_PWM_Init(PWMB, DISABLE, Priority_0);
 }
 
-// 初始化蜂鸣器
-void Buzzer_Init(void)
-{
-    EAXSFR();
-    Buzzer_GPIO_Init();
-    BUZZER = 0;
-}
-
 // 按照指定频率播放
-void Buzzer_Play(u16 freq)
+void Horn_PlayFreq(u16 freq)
 {
-    PWM_config(freq);
+    Horn_PWM_Config(freq);
 }
 
-// 根据索引取出对应的音调
-void Buzzer_Beep(u16 tone)
+// 按照指定音调播放
+void Horn_PlayTone(u16 tone)
 {
     u16 freq;
     if (tone == 0)
     {
         // 不发音
-        Buzzer_Stop();
+        Horn_stop();
         return;
     }
 
     freq = FREQS[tone - 1];
-    Buzzer_Play(freq);
+    Horn_PlayFreq(freq);
 }
 
 // 停止播放
-void Buzzer_Stop()
+void Horn_stop()
 {
-
-    PWMx_InitDefine pwmStruct;
+    PWMx_InitDefine pwmStruct = {0};
     pwmStruct.PWM_EnoSelect = 0;         // 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
     PWM_Configuration(PWM8, &pwmStruct); // 初始化PWM,  PWMA,PWMB
 }
 
-void Buzzer_Alarm()
+// 开启喇叭
+void Horn_On()
 {
-    Buzzer_Beep(10);
+    PWMB_ENO |= ENO8P; // 开启喇叭
+}
+
+// 关闭喇叭
+void Horn_Off(void)
+{
+    PWMB_ENO &= ~ENO8P; // 关闭喇叭
+}
+
+// 鸣笛指定时间
+void Horn_Beep(u16 tone, unsigned int ms)
+{
+    Horn_PlayTone(tone);
+    delay_ms(ms);
 }
