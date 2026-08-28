@@ -11,6 +11,9 @@
 #include "bsp_uart.h"
 #include "bsp_bluetooth.h"
 
+// 小车移动速度（0~100，越大越快），供串口单字母指令使用
+#define CAR_SPEED 70
+
 // 喇叭鸣叫一声
 void BeepOnce(void)
 {
@@ -47,6 +50,62 @@ void RunAround(void)
     Motors_Stop();        // 停止
 }
 
+// ---------- 串口单字母指令的落地动作（无参包装，经命令表回调调用） ----------
+
+// 前进（持续，直到收到新的移动/停止指令，下同）
+void Cmd_Forward(void)
+{
+    Motors_Forward(CAR_SPEED);
+}
+
+// 后退
+void Cmd_Backward(void)
+{
+    Motors_Backward(CAR_SPEED);
+}
+
+// 左平移
+void Cmd_Left(void)
+{
+    Motors_Left(CAR_SPEED, 0);
+}
+
+// 右平移
+void Cmd_Right(void)
+{
+    Motors_Right(CAR_SPEED, 0);
+}
+
+// 左转（原地逆时针旋转）
+void Cmd_TurnLeft(void)
+{
+    Motors_Around(CAR_SPEED, 0);
+}
+
+// 右转（原地顺时针旋转）
+void Cmd_TurnRight(void)
+{
+    Motors_Around(CAR_SPEED, 1);
+}
+
+// 停止所有电机
+void Cmd_Stop(void)
+{
+    Motors_Stop();
+}
+
+// 串口1单字符命令表：{ 触发字符, 别名, 处理函数, 回传内容 }
+// 命令由应用层定义并以参数传给 UART1_ProcessCommands()，串口驱动不关心具体业务。
+const UART1_CmdItem g_uartCmds[] = {
+    {'W', 'w', Cmd_Forward,   "FORWARD OK\r\n"},
+    {'S', 's', Cmd_Backward,  "BACKWARD OK\r\n"},
+    {'A', 'a', Cmd_Left,      "LEFT OK\r\n"},
+    {'D', 'd', Cmd_Right,     "RIGHT OK\r\n"},
+    {'Q', 'q', Cmd_TurnLeft,  "TURN-LEFT OK\r\n"},
+    {'E', 'e', Cmd_TurnRight, "TURN-RIGHT OK\r\n"},
+    {'X', 'x', Cmd_Stop,      "STOP OK\r\n"},
+};
+
 void main(void)
 {
     KeyEvent evC;
@@ -65,7 +124,8 @@ void main(void)
     while (1)
     {
         UART1RxProcess(); // 串口接收超时计数（判断一帧数据是否接收完成）
-        UART1_Command();  // 串口命令处理（1/2/3/4 对应不同动作）
+        // 串口命令分发：根据命令表执行移动等动作
+        UART1_ProcessCommands(g_uartCmds, sizeof(g_uartCmds) / sizeof(g_uartCmds[0]));
 
         evC = KeyC_Scan(); // 扫描核心板按键 KEY_C
         evK = Key_Scan();  // 扫描独立按键 KEY
