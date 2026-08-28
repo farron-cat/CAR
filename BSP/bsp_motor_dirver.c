@@ -18,6 +18,9 @@
 
 #define PERIOD ((MAIN_Fosc / 1000) - 1)
 
+// ---------- 优化项 1：定义安全死区时间（单位：系统时钟周期） ----------
+#define DEAD_TIME 15 // 24MHz 下约 625ns，35MHz 下约 429ns，安全起步值
+
 typedef struct
 {
     int RR_speed; // 右后轮速度
@@ -37,9 +40,15 @@ typedef struct
  *          - speed=0              => 占空比  50
  *          - speed=100（最大前进）=> 占空比   0（F_Max）
  * @note  映射公式：duty = -(speed / 2) + 50。
+ *        优化：添加限幅，确保 speed 在 [-100, 100] 内。
  */
 int speed2duty(int speed)
 {
+    // 限幅，防止意外越界
+    if (speed > 100)
+        speed = 100;
+    if (speed < -100)
+        speed = -100;
     return -(speed / 2) + 50;
 }
 
@@ -49,6 +58,7 @@ int speed2duty(int speed)
  * @note  通过 speed2duty() 将每轮速度换算成占空比，写入各通道。
  * @note  速度为 0 的通道被禁用（PWM_EnoSelect = 0），任一通道使能则开启 PWMA 主输出与计数器。
  * @note  配置 PWM1~PWM4 通道引脚映射（P20/P21、P22/P23、P14/P15、P16/P17），并禁用 PWMA 中断。
+ * @note  优化：计数器（CEN）始终保持使能，避免启停冲击；主输出（MOE）也常开，仅通过 EnoSelect 控制通道。
  */
 void MotorDirver_PWM_Config(MotorDriverConfig cfg)
 {
@@ -64,47 +74,50 @@ void MotorDirver_PWM_Config(MotorDriverConfig cfg)
     u8 is_FR_enable = (cfg.FR_speed != 0);
     u8 is_FL_enable = (cfg.FL_speed != 0);
 
-    u8 mainEnable = is_RR_enable || is_RL_enable || is_FR_enable || is_FL_enable;
+    // 主输出使能标志（用于 MOE，但保持常开）
+    // u8 mainEnable = is_RR_enable || is_RL_enable || is_FR_enable || is_FL_enable;
 
     // --------------------------------------------------------
     // 具体PWM端口配置
 
     // 右后轮 RR - pwm1
-    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式, CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式
     pwmStruct.PWM_Duty = PERIOD * RR_duty / 100;                  // PWM占空比时间, 0~Period
-    pwmStruct.PWM_EnoSelect = is_RR_enable ? (ENO1P | ENO1N) : 0; // 输出通道选择, // ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N,ENO5P,ENO6P,ENO7P,ENO8P
+    pwmStruct.PWM_EnoSelect = is_RR_enable ? (ENO1P | ENO1N) : 0; // 输出通道选择
     PWM_Configuration(PWM1, &pwmStruct);
 
     // 左后轮 RL - pwm2
-    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式, CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式
     pwmStruct.PWM_Duty = PERIOD * RL_duty / 100;                  // PWM占空比时间, 0~Period
-    pwmStruct.PWM_EnoSelect = is_RL_enable ? (ENO2P | ENO2N) : 0; // 输出通道选择, // ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N,ENO5P,ENO6P,ENO7P,ENO8P
+    pwmStruct.PWM_EnoSelect = is_RL_enable ? (ENO2P | ENO2N) : 0; // 输出通道选择
     PWM_Configuration(PWM2, &pwmStruct);
 
     // 右前轮 FR - pwm3
-    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式, CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式
     pwmStruct.PWM_Duty = PERIOD * FR_duty / 100;                  // PWM占空比时间, 0~Period
-    pwmStruct.PWM_EnoSelect = is_FR_enable ? (ENO3P | ENO3N) : 0; // 输出通道选择, // ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N,ENO5P,ENO6P,ENO7P,ENO8P
+    pwmStruct.PWM_EnoSelect = is_FR_enable ? (ENO3P | ENO3N) : 0; // 输出通道选择
     PWM_Configuration(PWM3, &pwmStruct);
 
-    // 右后轮 FL - pwm4
-    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式, CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+    // 左前轮 FL - pwm4
+    pwmStruct.PWM_Mode = CCMRn_PWM_MODE1;                         // 模式
     pwmStruct.PWM_Duty = PERIOD * FL_duty / 100;                  // PWM占空比时间, 0~Period
-    pwmStruct.PWM_EnoSelect = is_FL_enable ? (ENO4P | ENO4N) : 0; // 输出通道选择, // ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N,ENO5P,ENO6P,ENO7P,ENO8P
+    pwmStruct.PWM_EnoSelect = is_FL_enable ? (ENO4P | ENO4N) : 0; // 输出通道选择
     PWM_Configuration(PWM4, &pwmStruct);
 
-    // 配置PWMA
-    pwmStruct.PWM_Period = PERIOD;            // 周期时间,   0~65535
-    pwmStruct.PWM_DeadTime = 0;               // 死区发生器设置, 0~255
-    pwmStruct.PWM_MainOutEnable = mainEnable; // 主输出使能, ENABLE,DISABLE
-    pwmStruct.PWM_CEN_Enable = mainEnable;    // 使能计数器, ENABLE,DISABLE
-    PWM_Configuration(PWMA, &pwmStruct);      // 初始化PWM通用寄存器,  PWMA,PWMB
+    // 配置 PWMA 全局寄存器
+    pwmStruct.PWM_Period = PERIOD; // 周期时间,   0~65535
+    // ---------- 优化项 2：设置死区时间为安全值 ----------
+    pwmStruct.PWM_DeadTime = DEAD_TIME; // 死区发生器设置, 原为 0，现已修改
+    // ---------- 优化项 3：主输出和计数器保持常开 ----------
+    pwmStruct.PWM_MainOutEnable = ENABLE; // 主输出使能，原随 mainEnable 变化，现常开
+    pwmStruct.PWM_CEN_Enable = ENABLE;    // 使能计数器，原随 mainEnable 变化，现常开
+    PWM_Configuration(PWMA, &pwmStruct);  // 初始化PWM通用寄存器
 
     // 切换PWM通道
-    PWM1_SW(PWM1_SW_P20_P21); // PWM1_SW_P10_P11,PWM1_SW_P20_P21,PWM1_SW_P60_P61
-    PWM2_SW(PWM2_SW_P22_P23); // PWM2_SW_P12_P13,PWM2_SW_P22_P23,PWM2_SW_P62_P63
-    PWM3_SW(PWM3_SW_P14_P15); // PWM3_SW_P14_P15,PWM3_SW_P24_P25,PWM3_SW_P64_P65
-    PWM4_SW(PWM4_SW_P16_P17); // PWM4_SW_P16_P17,PWM4_SW_P26_P27,PWM4_SW_P66_P67,PWM4_SW_P34_P33
+    PWM1_SW(PWM1_SW_P20_P21); // PWM1_SW_P10_P11, PWM1_SW_P20_P21, PWM1_SW_P60_P61
+    PWM2_SW(PWM2_SW_P22_P23); // PWM2_SW_P12_P13, PWM2_SW_P22_P23, PWM2_SW_P62_P63
+    PWM3_SW(PWM3_SW_P14_P15); // PWM3_SW_P14_P15, PWM3_SW_P24_P25, PWM3_SW_P64_P65
+    PWM4_SW(PWM4_SW_P16_P17); // PWM4_SW_P16_P17, PWM4_SW_P26_P27, PWM4_SW_P66_P67, PWM4_SW_P34_P33
 
     // 禁用PWMA的中断
     NVIC_PWM_Init(PWMA, DISABLE, Priority_0);
@@ -217,7 +230,6 @@ void Motors_Around(int speed, int dir)
         cfg.RL_speed = -speed;
         cfg.FL_speed = -speed;
     }
-
     // 顺时针
     else
     {
