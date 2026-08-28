@@ -6,6 +6,8 @@
 #define BT_RXD P10   // UART2 RxD（P1.0）
 #define BT_TXD P11   // UART2 TxD（P1.1）
 
-void BT_Init(void); // 初始化蓝牙模块（GPIO + UART2）
+void BT_Init(void);          // 初始化蓝牙模块（GPIO + UART2）
+void BT_UART_SENsD2BT(void); // 发送数据到蓝牙模块
+u8 BT_UART_RESFBT(void);     // 接收数据从蓝牙模块
 
 #endif

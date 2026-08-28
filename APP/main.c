@@ -9,6 +9,7 @@
 #include "bsp_key.h"
 #include "bsp_timer.h"
 #include "bsp_uart.h"
+#include "bsp_bluetooth.h"
 
 // 喇叭鸣叫一声
 void BeepOnce(void)
@@ -46,68 +47,6 @@ void RunAround(void)
     Motors_Stop();        // 停止
 }
 
-/**
- * @brief 串口1命令处理：解析接收到的单字符命令并执行对应动作，处理后回传执行结果
- * @note 需周期性调用（与 UART1RxProcess 配合），当 UART1_RxFlag 置位表示一帧数据接收完成：
- *         - 发送 '1' → BeepOnce    (喇叭叫一声)
- *         - 发送 '2' → BeepTwice   (喇叭叫两声)
- *         - 发送 '3' → RunForward5s(向前跑5秒)
- *         - 发送 '4' → RunLeft     (向左平移跑)
- * @note 取首个有效字节作为命令，执行命令后通过 UART1_SendString 回传状态（如 "BEEP1 OK\r\n"），
- *       处理完成后复位 UART1_RxFlag 与 COM1.RX_Cnt。
- */
-/**
- * @brief 串口1发送字符串（以 '\0' 结尾）
- * @param str 待发送的以空字符结尾的字符串
- */
-void UART1_SendString(u8 *str)
-{
-    while (*str)
-    {
-        TX1_write2buff(*str++); // 逐字节写入发送缓冲
-    }
-}
-void UART1_Command(void)
-{
-    if (UART1_RxFlag == 0)
-        return; // 未收到完整数据帧
-
-    UART1_RxFlag = 0; // 清除接收完成标志
-
-    if (COM1.RX_Cnt == 0)
-        return; // 无有效数据
-
-    // 取第一个字节作为命令
-    switch (RX1_Buffer[0])
-    {
-    case '1': // 喇叭叫一声
-        BeepOnce();
-        UART1_SendString("BEEP1 OK\r\n");
-        break;
-
-    case '2': // 喇叭叫两声
-        BeepTwice();
-        UART1_SendString("BEEP2 OK\r\n");
-        break;
-
-    case '3': // 向前跑5秒
-        RunForward5s();
-        UART1_SendString("FORWARD5S OK\r\n");
-        break;
-
-    case '4': // 向左平移跑
-        RunAround();
-        UART1_SendString("Around OK\r\n");
-        break;
-
-    default:
-        UART1_SendString("UNKNOWN CMD\r\n");
-        break; // 忽略未知命令
-    }
-
-    COM1.RX_Cnt = 0; // 复位接收计数，准备下一次接收
-}
-
 void main(void)
 {
     KeyEvent evC;
@@ -118,7 +57,6 @@ void main(void)
     LED_Init();
 
     Horn_Init();     // 初始化喇叭
-    // Motors_Init();   // 初始化电机PWM硬件（bsp_motor_driver，必须调用否则电机无输出）
     KeyInit();       // 初始化按键 KEY / KEY_C
     Timer0Init1ms(); // 启动Timer0 1ms中断，递增 tickMs（按键扫描依赖）
     UART1Init();     // 初始化串口1（波特率115200，接收使能）
