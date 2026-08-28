@@ -46,6 +46,8 @@
 extern unsigned char code segCodeTable[16];
 // 位码表
 extern unsigned char code digCodeTable[8];
+// 数码管显示缓冲（8位，段码值），由Timer1中断扫描刷新
+extern unsigned char displayBuffer[8];
 
 void DigitalLEDInit(void);
 void SendByte(unsigned char dat);

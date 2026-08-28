@@ -8,6 +8,10 @@ unsigned char code segCodeTable[16] = {SEG_0, SEG_1, SEG_2, SEG_3, SEG_4, SEG_5,
 // 位码表
 unsigned char code digCodeTable[8] = {DIG_1, DIG_2, DIG_3, DIG_4, DIG_5, DIG_6, DIG_7, DIG_8};
 
+// 数码管显示缓冲（8位），存放各位置的段码值，由Timer1中断扫描刷新
+// 默认全部熄灭（SEG_CLR = 0xFF，共阳数码管灭段）
+unsigned char displayBuffer[8] = {SEG_CLR, SEG_CLR, SEG_CLR, SEG_CLR, SEG_CLR, SEG_CLR, SEG_CLR, SEG_CLR};
+
 void DigitalLEDInit(void)
 {
     // 配置P4.2、P4.3、P4.4为推挽输出
