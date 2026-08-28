@@ -31,27 +31,27 @@ void MotorDirver_PWM_Config();
  * @brief 四轮全速前进
  * @param speed 前进速度，范围 0~100（值越大越快）。
  */
-void Motors_Forward(int speed);         // 前进
+void Motors_Forward(int speed); // 前进
 
 /**
  * @brief 四轮全速后退
  * @param speed 后退速度，范围 0~100（值越大越快）。
  */
-void Motors_Backward(int speed);        // 后退
+void Motors_Backward(int speed); // 后退
 
 /**
  * @brief 小车左平移
  * @param speed 平移速度，范围 0~100。
  * @param dir   平移方向（0：整体左移；1：右侧轮向外；-1：左侧轮向内）。
  */
-void Motors_Left(int speed, int dir);   // 左移
+void Motors_Left(int speed, int dir); // 左移
 
 /**
  * @brief 小车右平移
  * @param speed 平移速度，范围 0~100。
  * @param dir   平移方向（0：整体右移；1：右侧轮向内；-1：左侧轮向外）。
  */
-void Motors_Right(int speed, int dir);  // 右移
+void Motors_Right(int speed, int dir); // 右移
 
 /**
  * @brief 小车原地旋转
@@ -63,6 +63,6 @@ void Motors_Around(int speed, int dir); // 原地打转
 /**
  * @brief 停止所有电机
  */
-void Motors_Stop();                     // 停止
+void Motors_Stop(); // 停止
 
 #endif // BSP__MOTOR_DRIVER_H
