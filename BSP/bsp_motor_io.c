@@ -1,3 +1,16 @@
+/**
+ * @file    bsp_motor_io.c
+ * @brief   电机 I/O 控制驱动模块
+ * @details 本模块负责四路小车的直流电机控制引脚初始化与运转控制：
+ *          - 前进/后退使能引脚：P1 口的 P1.4 ~ P1.7、P2 口的 P2.0 ~ P2.3。
+ *          - 每个电机含正转（F）与反转（B）两个引脚，通过电平组合控制转向。
+ *          提供电机引脚初始化、方向设置、软件 PWM 变速（阻塞式）及停止功能。
+ * @note    所有控制引脚均配置为推挽输出（GPIO_OUT_PP），由高低电平直接驱动。
+ * @note    Motor_RunWithDelay() 为阻塞式软件 PWM（20ms 周期），运行期间会将
+ *          CPU 占用，无法响应其它任务；如需非阻塞控制请改用硬件 PWM 或定时器方案。
+ * @note    软件 PWM 通过延时实现，调速精度受 delay_ms() 分辨率限制。
+ */
+
 #include "STC8G_H_GPIO.h"
 #include "STC8G_H_Delay.h"
 #include "bsp_motor_io.h"
@@ -92,7 +105,11 @@ void Motor_RunWithDelay(unsigned char direction, unsigned char speed, unsigned i
     Motor_Stop();
 }
 
-// 辅助函数：停止所有电机（将控制引脚全置低）
+/**
+ * @brief 停止所有电机
+ * @note  将所有电机控制引脚（正转与反转）全部置低，使电机处于释放/停止状态。
+ * @note  该函数为 Motor_RunWithDelay() 的辅助停止函数，也可单独调用。
+ */
 void Motor_Stop(void)
 {
     MOTOR_RR_F = 0;

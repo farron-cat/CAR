@@ -1,3 +1,13 @@
+/**
+ * @file    bsp_key.h
+ * @brief   按键驱动模块接口
+ * @details 提供核心板及其扩展板独立按键的定义与扫描接口：
+ *          - KEY   ：扩展板独立按键，接 P0.5，按下为低电平。
+ *          - KEY_C ：核心板独立按键，接 P3.2，按下为低电平。
+ *          - KeyEvent 枚举：定义无事件/短按/长按三种按键事件。
+ *          提供引脚初始化（含 INT0 中断方式）与按键扫描接口。
+ * @note    扫描函数需周期性调用（建议每 10~20ms 一次），且依赖 bsp_timer 的 tickMs 计数。
+ */
 #ifndef BSP_KEY_H
 #define BSP_KEY_H
 
