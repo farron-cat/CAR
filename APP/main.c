@@ -39,11 +39,11 @@ void RunForward5s(void)
 }
 
 // 向左平移跑
-void RunLeft(void)
+void RunAround(void)
 {
-    Motors_Left(70, 0); // 左平移（速度70）
-    delay_ms(3000);     // 持续3秒
-    Motors_Stop();      // 停止
+    Motors_Around(70, 0); // 左平移（速度70）
+    delay_ms(3000);       // 持续3秒
+    Motors_Stop();        // 停止
 }
 
 /**
@@ -96,8 +96,8 @@ void UART1_Command(void)
         break;
 
     case '4': // 向左平移跑
-        RunLeft();
-        UART1_SendString("LEFT OK\r\n");
+        RunAround();
+        UART1_SendString("Around OK\r\n");
         break;
 
     default:
@@ -118,7 +118,7 @@ void main(void)
     LED_Init();
 
     Horn_Init();     // 初始化喇叭
-    Motor_Init();    // 初始化电机GPIO
+    // Motors_Init();   // 初始化电机PWM硬件（bsp_motor_driver，必须调用否则电机无输出）
     KeyInit();       // 初始化按键 KEY / KEY_C
     Timer0Init1ms(); // 启动Timer0 1ms中断，递增 tickMs（按键扫描依赖）
     UART1Init();     // 初始化串口1（波特率115200，接收使能）
@@ -138,7 +138,7 @@ void main(void)
             BeepOnce(); // 长按 KEY_C：喇叭叫一声
 
         if (evK == KEY_SHORT_PRESS)
-            RunLeft(); // 短按 KEY：向左跑
+            RunAround(); // 短按 KEY：向左跑
         else if (evK == KEY_LONG_PRESS)
             BeepTwice(); // 长按 KEY：喇叭叫两声
 
