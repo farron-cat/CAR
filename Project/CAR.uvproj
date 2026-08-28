@@ -431,6 +431,26 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\bsp_horn.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_motor_io.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_motor_io.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_uart.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -465,6 +485,26 @@
               <FileName>STC8G_H_NVIC.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\MCU\STC8G_H_NVIC.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC8G_H_Timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\STC8G_H_Timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC8G_H_Exti.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\STC8G_H_Exti.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC8G_H_UART.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\STC8G_H_UART.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC8G_H_UART_Isr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\STC8G_H_UART_Isr.c</FilePath>
             </File>
           </Files>
         </Group>
