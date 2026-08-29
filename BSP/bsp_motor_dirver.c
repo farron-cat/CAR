@@ -254,3 +254,50 @@ void Motors_Stop()
     cfg.FL_speed = 0;
     MotorDirver_PWM_Config(cfg);
 }
+
+/**
+ * @brief 速度限幅到 [-100, 100]
+ * @param v 待限幅的速度值
+ * @return 限幅后的速度值（范围 -100~100）
+ * @note 麦克纳姆四轮叠加后可能超出速度范围，需先限幅再缩放。
+ */
+static int LimitSpeed(int v)
+{
+    if (v > 100)
+        v = 100;
+    if (v < -100)
+        v = -100;
+    return v;
+}
+
+/**
+ * @brief 麦克纳姆轮全向移动（摇杆控制）
+ * @param x 摇杆横向分量（-100~100）：负=左移，正=右移
+ * @param y 摇杆纵向分量（-100~100）：负=后退，正=前进
+ * @note  四轮差速组合（参考麦克纳姆全向底盘公式）：
+ *          LF(FL) = (x + y)   LB(RL) = (y - x)
+ *          RF(FR) = (y - x)   RB(RR) = (x + y)
+ *        按 30% 比例缩放（整数运算 30/100），实现平滑全向移动。
+ */
+void Motors_move(char x, char y)
+{
+    MotorDriverConfig cfg = {0, 0, 0, 0};
+    int lf, lb, rf, rb; // 各轮目标速度（未缩放）
+
+    // 摇杆方向校正：实测摇杆输入与小车实际运动方向相反（上下/左右均反），取反处理
+    x = (char)(-x);
+    y = (char)(-y);
+
+    lf = x + y; // 左前轮 LF/FL
+    lb = y - x; // 左后轮 LB/RL
+    rf = y - x; // 右前轮 RF/FR
+    rb = x + y; // 右后轮 RB/RR
+
+    // 限幅并按 30% 缩放（对应参考代码 0.3 倍速）
+    cfg.FL_speed = 30 * LimitSpeed(lf) / 100;
+    cfg.RL_speed = 30 * LimitSpeed(lb) / 100;
+    cfg.FR_speed = 30 * LimitSpeed(rf) / 100;
+    cfg.RR_speed = 30 * LimitSpeed(rb) / 100;
+
+    MotorDirver_PWM_Config(cfg);
+}

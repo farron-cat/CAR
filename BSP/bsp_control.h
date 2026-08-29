@@ -35,4 +35,14 @@ void Cmd_TurnLeft(void);  // 原地左转（逆时针）
 void Cmd_TurnRight(void); // 原地右转（顺时针）
 void Cmd_Stop(void);      // 停止
 
+/**
+ * @brief 手机小程序（蓝牙）遥控处理函数
+ * @note  需周期调用。从 UART2(RX2_Buffer) 固定协议帧中解析摇杆与按键：
+ *        - buf[0..1] 帧头，buf[2] = 摇杆 x，buf[3] = 摇杆 y
+ *        - buf[4] = A 按键，buf[5] = B 按键，buf[6] = C 按键，buf[7] = D 按键
+ *        实现：A 键鸣笛+车灯切换、B/C 键原地左右转、摇杆全向移动；
+ *        D 键（巡线）暂留空占位。处理完成后复位 UART2_RxFlag 与 COM2.RX_Cnt。
+ */
+void BT_Remote_Control(void);
+
 #endif // BSP_CONTROL_H

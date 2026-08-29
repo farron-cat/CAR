@@ -65,4 +65,13 @@ void Motors_Around(int speed, int dir); // 原地打转
  */
 void Motors_Stop(); // 停止
 
+/**
+ * @brief 麦克纳姆轮全向移动（摇杆控制）
+ * @param x 摇杆横向分量（-100~100）：负=左移，正=右移
+ * @param y 摇杆纵向分量（-100~100）：负=后退，正=前进
+ * @note  通过四轮差速实现前进/后退/平移/转向的平滑组合，
+ *        内部按 30% 比例缩放速度（避免全速）。
+ */
+void Motors_move(char x, char y); // 麦克纳姆全向摇杆控制
+
 #endif // BSP__MOTOR_DRIVER_H

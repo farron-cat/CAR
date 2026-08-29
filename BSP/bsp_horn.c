@@ -180,4 +180,5 @@ void Horn_Beep(u16 tone, unsigned int ms)
 {
     Horn_PlayTone(tone);
     delay_ms(ms);
+    Horn_stop(); // 鸣笛结束停止播放，避免一直响
 }

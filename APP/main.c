@@ -89,15 +89,14 @@ void main(void)
     EA = 1; // 使能全局中断
     while (1)
     {
+        // UART1 串口调试（字符串命令，如 FORWARD/FW/STOP 等）：
         // UART1RxProcess();   // 串口接收超时判断：检测到一帧数据接收是否完成
-        // UART1_BT_Forward(); // 将UART1收到的数据原样转发给蓝牙(UART2)
-        // 在这里处理字符串命令，匹配后执行移动等动作
         // UART1_ProcessCommands(g_uartCmds, g_uartCmdCount);
 
         BT_RxProcess();     // 蓝牙(UART2)接收超时判断：检测到一帧数据接收是否完成
         BT_UART1_Forward(); // 将蓝牙(UART2)收到的数据原样转发至UART1
-        // 在这里处理字符串命令，匹配后执行移动等动作
-        BT_ProcessCommands(g_uartCmds, g_uartCmdCount);
+        // 手机小程序（蓝牙）遥控：解析协议帧（摇杆 + A/B/C/D 按键）并驱动小车
+        BT_Remote_Control();
 
         // Key_Task(); // 周期扫描并响应 KEY / KEY_C
 
