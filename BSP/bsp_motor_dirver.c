@@ -26,6 +26,7 @@
 #define MID_SEG_END 98   // 中段终点（未缩放速度）：中段保留 0.3 降幅（10~98）
 #define LOW_SCALE 30     // 中段降幅比例（%）：0.3
 #define HIGH_SCALE 50    // 高速段终点降幅（%）：突破 0.3 但不超过 0.5
+#define MIN_MOVE_SPEED 20 // 电机天然死区下限：输出速度低于此值电机转不动，中段垫底消除死区
 
 typedef struct
 {
@@ -260,10 +261,10 @@ void Motors_Stop()
 }
 
 /**
- * @brief 摇杆速度分段缩放（保留 0.3 降幅，高速段补偿）
+ * @brief 摇杆速度分段缩放（中段消除电机天然死区，高速段补偿）
  * @param v 未缩放速度（-100~100，来自摇杆差速组合）
- * @return 缩放后速度：死区(±10)内 0；中段(10~80)按 30% 降幅；
- *         高速段(98~100)补偿放大，终点降幅最高 70%（不超过 0.5）。
+ * @return 缩放后速度：死区(±10)内 0；中段(10~98)从 MIN_MOVE_SPEED 垫底
+ *         线性递增到 30% 降幅值；高速段(98~100)补偿放大到 HIGH_SCALE。
  */
 static int scaleSpeed(int v)
 {
@@ -278,9 +279,10 @@ static int scaleSpeed(int v)
     if (mag < JOY_DEAD_ZONE)
         return 0;
 
-    // 中段：0.3 降幅（保留原手感）
+    // 中段：消除电机天然死区——输出从 MIN_MOVE_SPEED 垫底起步（保证任何位置都能转动），
+    //       线性递增到 0.3 降幅下的中段终点值，保留平缓手感
     if (mag <= MID_SEG_END)
-        out = mag * LOW_SCALE / 100;
+        out = MIN_MOVE_SPEED + (mag - JOY_DEAD_ZONE) * (MID_SEG_END * LOW_SCALE / 100 - MIN_MOVE_SPEED) / (MID_SEG_END - JOY_DEAD_ZONE);
     // 高速段：补偿放大，突破 0.3 限制但不超过 HIGH_SCALE（0.5）
     else
         out = (MID_SEG_END * LOW_SCALE / 100) + (mag - MID_SEG_END) * (HIGH_SCALE - MID_SEG_END * LOW_SCALE / 100) / (100 - MID_SEG_END);
