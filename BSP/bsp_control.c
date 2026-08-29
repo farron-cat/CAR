@@ -74,13 +74,13 @@ void Cmd_Stop(void)
  *        串口驱动对整帧做字符串匹配（含 alias），命中后回调执行并回传 ack。
  */
 const UART1_CmdItem g_uartCmds[] = {
-    {"FORWARD",  "FW",  Cmd_Forward,   "FORWARD OK\r\n"},
-    {"BACKWARD", "BW",  Cmd_Backward,  "BACKWARD OK\r\n"},
-    {"LEFT",     "L",   Cmd_Left,      "LEFT OK\r\n"},
-    {"RIGHT",    "R",   Cmd_Right,     "RIGHT OK\r\n"},
-    {"TURN-LEFT",  "TL", Cmd_TurnLeft,  "TURN-LEFT OK\r\n"},
+    {"FORWARD", "FW", Cmd_Forward, "FORWARD OK\r\n"},
+    {"BACKWARD", "BW", Cmd_Backward, "BACKWARD OK\r\n"},
+    {"LEFT", "L", Cmd_Left, "LEFT OK\r\n"},
+    {"RIGHT", "R", Cmd_Right, "RIGHT OK\r\n"},
+    {"TURN-LEFT", "TL", Cmd_TurnLeft, "TURN-LEFT OK\r\n"},
     {"TURN-RIGHT", "TR", Cmd_TurnRight, "TURN-RIGHT OK\r\n"},
-    {"STOP",     "S",   Cmd_Stop,      "STOP OK\r\n"},
+    {"STOP", "S", Cmd_Stop, "STOP OK\r\n"},
 };
 
 // 命令表条目数
@@ -101,15 +101,15 @@ const u8 g_uartCmdCount = sizeof(g_uartCmds) / sizeof(g_uartCmds[0]);
 void BT_Remote_Control(void)
 {
     // static变量，函数调用完毕不释放
-    static u8 led_flag = 0;     // 1:灯亮, 0:灯灭
-    static u8 is_turning = 0;   // 1:正在原地旋转, 0:未旋转
-    static u8 s_lastA = 0;      // 1:A键上一次状态（边缘触发用）
-    static u8 s_lastB = 0;      // 1:B键上一次状态（边缘触发用）
-    static u8 s_lastRxCnt = 0;  // 上一次调用时的接收计数（用于判断是否有新帧）
-    static u8 s_idleCnt = 0;    // 空闲计数：连续未收到新帧的次数
+    static u8 led_flag = 0;    // 1:灯亮, 0:灯灭
+    static u8 is_turning = 0;  // 1:正在原地旋转, 0:未旋转
+    static u8 s_lastA = 0;     // 1:A键上一次状态（边缘触发用）
+    static u8 s_lastB = 0;     // 1:B键上一次状态（边缘触发用）
+    static u8 s_lastRxCnt = 0; // 上一次调用时的接收计数（用于判断是否有新帧）
+    static u8 s_idleCnt = 0;   // 空闲计数：连续未收到新帧的次数
 
-    char x;        // 摇杆横向分量（有符号，负=左，正=右）
-    char y;        // 摇杆纵向分量（有符号，负=后，正=前）
+    char x; // 摇杆横向分量（有符号，负=左，正=右）
+    char y; // 摇杆纵向分量（有符号，负=后，正=前）
     u8 cur_A, cur_B, cur_C, cur_D;
 
     // 判断是否有新数据到达（RX_Cnt 发生变化即有新帧）
@@ -151,7 +151,9 @@ void BT_Remote_Control(void)
     // 1. A键: 蜂鸣器/车灯（边缘触发，只在按下瞬间执行一次）
     if (cur_A == 1 && s_lastA == 0)
     {
-        Horn_Beep(5, 200); // 鸣笛
+        Horn_Beep(7, 100);
+        Horn_Beep(8, 100);
+        Horn_Beep(9, 100);
         if (led_flag == 0)
         { // 原来是灭，需要开灯
             Light_SetState(LIGHT_RUN, LIGHT_ON);
@@ -181,7 +183,7 @@ void BT_Remote_Control(void)
     { // 按下C: 左旋转
         if (is_turning == 0)
         {
-            Motors_Around(REMOTE_TURN_SPEED, 0); // 原地左转（逆时针）
+            Motors_Around(REMOTE_TURN_SPEED, 1);
             is_turning = 1;
         }
     }
@@ -189,7 +191,7 @@ void BT_Remote_Control(void)
     { // 按下D: 右旋转
         if (is_turning == 0)
         {
-            Motors_Around(REMOTE_TURN_SPEED, 1); // 原地右转（顺时针）
+            Motors_Around(REMOTE_TURN_SPEED, 0);
             is_turning = 1;
         }
     }
