@@ -456,6 +456,16 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_motor_dirver.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\bsp_control.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

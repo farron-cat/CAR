@@ -21,6 +21,8 @@ virtualFolder:
         - path: ../BSP/bsp_motor_dirver.c
         - path: ../BSP/bsp_light.c
         - path: ../BSP/bsp_light.h
+        - path: ../BSP/bsp_control.c
+        - path: ../BSP/bsp_control.h
       folders: []
     - name: MCU
       files:

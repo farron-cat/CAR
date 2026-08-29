@@ -59,54 +59,6 @@ void BT_Init(void)
     UART2_Config(); // 配置UART2
 }
 
-// uart1与uart2通信
-
-void BT_UART_SENsD2BT(void)
-{
-    u8 index_i;
-
-    if (COM1.RX_TimeOut > 0) // UART1 的接收到信息
-    {
-        // 超时计数
-        if (--COM1.RX_TimeOut == 0)
-        {
-            if (COM1.RX_Cnt > 0)
-            {
-                for (index_i = 0; index_i < COM1.RX_Cnt; index_i++)
-                {
-
-                    TX2_write2buff(RX1_Buffer[index_i]); // 将UART1 接收到的送到UART2
-                }
-            }
-            COM1.RX_Cnt = 0;
-        }
-    }
-}
-
-//
-u8 BT_UART_RESFBT(void)
-{
-    u8 index_i = 0;
-
-    if (COM2.RX_TimeOut > 0) // UART2 接收到蓝牙发送的信息
-    {
-        if (--COM2.RX_TimeOut == 0)
-        {
-            if (COM2.RX_Cnt > 0)
-            { // 通过UART1 printf 将蓝牙模块发给UART2信息打印出来
-                for (index_i = 0; index_i < COM2.RX_Cnt; index_i++)
-                {
-                    TX1_write2buff(RX2_Buffer[index_i]);
-                }
-
-                COM2.RX_Cnt = 0;
-                return 1; // 接收成功 返回1
-            }
-        }
-    }
-    return 0;
-}
-
 // 通过UART2（蓝牙）发送字符串（以 '\0' 结尾）
 void BT_SendString(u8 *str)
 {
@@ -133,7 +85,7 @@ void BT_RxProcess(void)
  * @param cmdTable 命令结构体数组（与 UART1_ProcessCommands 共用同一命令表）
  * @param count    命令表项数
  * @note  需周期性调用（与 BT_RxProcess 配合），当 UART2_RxFlag 置位表示一帧数据接收完成：
- *        取首个有效字节作为命令，遍历命令表匹配 cmd/alias，命中则调用 handler 并回传 ack；
+ *        对整帧做字符串匹配（cmd/alias），命中则调用 handler 并回传 ack；
  *        未命中回传 "UNKNOWN BT CMD\r\n"。处理完成后复位 UART2_RxFlag 与 COM2.RX_Cnt。
  */
 void BT_ProcessCommands(const UART1_CmdItem *cmdTable, u8 count)
@@ -148,10 +100,11 @@ void BT_ProcessCommands(const UART1_CmdItem *cmdTable, u8 count)
     if (COM2.RX_Cnt == 0)
         return; // 无有效数据
 
-    // 取第一个字节作为命令，在命令表中匹配执行
+    // 遍历命令表，对整帧做字符串匹配（cmd 或 alias）
     for (i = 0; i < count; i++)
     {
-        if (RX2_Buffer[0] == cmdTable[i].cmd || RX2_Buffer[0] == cmdTable[i].alias)
+        if (UART_CmdFrameMatch(RX2_Buffer, COM2.RX_Cnt, cmdTable[i].cmd) ||
+            (cmdTable[i].alias != 0 && UART_CmdFrameMatch(RX2_Buffer, COM2.RX_Cnt, cmdTable[i].alias)))
         {
             if (cmdTable[i].handler != 0)
                 cmdTable[i].handler(); // 执行动作
@@ -165,4 +118,69 @@ void BT_ProcessCommands(const UART1_CmdItem *cmdTable, u8 count)
     // 未匹配到任何命令
     BT_SendString("UNKNOWN BT CMD\r\n");
     COM2.RX_Cnt = 0; // 复位接收计数，准备下一次接收
+}
+
+/**
+ * @brief 将UART1收到的一帧数据原样转发到蓝牙(UART2)
+ * @note  需在 UART1_ProcessCommands 之前周期性调用。检测到 UART1_RxFlag 置位时，
+ *        将当前帧的 RX1_Buffer 逐字节转发到蓝牙(UART2)，但不修改接收标志/计数
+ *        （标志与计数的复位仍由 UART1_ProcessCommands 负责，避免冲突）。
+ */
+void UART1_BT_Forward(void)
+{
+    u8 i;
+
+    if (UART1_RxFlag == 0)
+        return; // 未收到完整数据帧
+
+    if (COM1.RX_Cnt == 0)
+        return; // 无有效数据
+
+    for (i = 0; i < COM1.RX_Cnt; i++)
+    {
+        TX2_write2buff(RX1_Buffer[i]); // 将UART1收到的原样转发到UART2（蓝牙）
+    }
+}
+
+/**
+ * @brief 将蓝牙(UART2)收到的一帧数据原样转发到UART1
+ * @note  需在 BT_ProcessCommands 之前周期性调用。检测到 UART2_RxFlag 置位时，
+ *        将当前帧的 RX2_Buffer 逐字节转发到UART1，但不修改接收标志/计数
+ *        （标志与计数的复位仍由 BT_ProcessCommands 负责，避免冲突）。
+ */
+void BT_UART1_Forward(void)
+{
+    u8 i;
+
+    if (UART2_RxFlag == 0)
+        return; // 未收到完整数据帧
+
+    if (COM2.RX_Cnt == 0)
+        return; // 无有效数据
+
+    for (i = 0; i < COM2.RX_Cnt; i++)
+    {
+        TX1_write2buff(RX2_Buffer[i]); // 将蓝牙(UART2)收到的原样转发到UART1
+    }
+}
+
+/**
+ * @brief 通过UART1打印蓝牙状态引脚(BT_STATE)电平，用于诊断模块是否处于可发现/连接状态
+ * @note  周期调用即可。定义打印间隔 RPT_PERIOD_MS（如500ms）：
+ *        - BT_STATE=1 → 模块可能处于已连接或AT模式，手机通常搜不到
+ *        - BT_STATE=0 → 模块处于空闲/可发现状态（具体含义随模组而定）
+ */
+void BT_StatusReport(void)
+{
+    static unsigned int report_cnt = 0; // 计数器，配合外部周期调用实现定时打印
+
+    if (++report_cnt >= 50) // 外部每10ms调用一次，则50次=500ms打印一次
+    {
+        report_cnt = 0;
+
+        if (BT_STATE)
+            UART1_SendString("BT_STATE=1\r\n"); // 1: 已连接 / AT模式
+        else
+            UART1_SendString("BT_STATE=0\r\n"); // 0: 空闲 / 可发现
+    }
 }
