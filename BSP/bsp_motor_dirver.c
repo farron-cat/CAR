@@ -21,6 +21,12 @@
 // ---------- 优化项 1：定义安全死区时间（单位：系统时钟周期） ----------
 #define DEAD_TIME 15 // 24MHz 下约 625ns，35MHz 下约 429ns，安全起步值
 
+// ---------- 摇杆分段速度缩放（仅摇杆路径 Motors_move 内生效） ----------
+#define JOY_DEAD_ZONE 10 // 摇杆死区：未缩放速度 |v| < 10 视为停止（防止回中漂移）
+#define MID_SEG_END 98   // 中段终点（未缩放速度）：中段保留 0.3 降幅（10~98）
+#define LOW_SCALE 30     // 中段降幅比例（%）：0.3
+#define HIGH_SCALE 50    // 高速段终点降幅（%）：突破 0.3 但不超过 0.5
+
 typedef struct
 {
     int RR_speed; // 右后轮速度
@@ -39,19 +45,17 @@ typedef struct
  *          - speed=-100（最大后退）=> 占空比 100（B_Max）
  *          - speed=0              => 占空比  50
  *          - speed=100（最大前进）=> 占空比   0（F_Max）
- * @note  映射公式：duty = -(speed / 2) + 50。
- *        优化：添加限幅，确保 speed 在 [-100, 100] 内。
+ * @note  原始线性映射：duty = -(speed / 2) + 50。
+ *        摇杆低速段的 0.3 降幅与高速段补偿由 Motors_move / scaleSpeed 处理。
  */
 int speed2duty(int speed)
 {
-    // 限幅，防止意外越界
     if (speed > 100)
         speed = 100;
     if (speed < -100)
         speed = -100;
     return -(speed / 2) + 50;
 }
-
 /**
  * @brief 根据四项速度配置 PWM1 ~ PWM4 的占空比与输出通道
  * @param cfg 各轮速度配置 MotorDriverConfig（RR/RL/FR/FL_speed，范围 -100~100）
@@ -256,20 +260,33 @@ void Motors_Stop()
 }
 
 /**
- * @brief 速度限幅到 [-100, 100]
- * @param v 待限幅的速度值
- * @return 限幅后的速度值（范围 -100~100）
- * @note 麦克纳姆四轮叠加后可能超出速度范围，需先限幅再缩放。
+ * @brief 摇杆速度分段缩放（保留 0.3 降幅，高速段补偿）
+ * @param v 未缩放速度（-100~100，来自摇杆差速组合）
+ * @return 缩放后速度：死区(±10)内 0；中段(10~80)按 30% 降幅；
+ *         高速段(98~100)补偿放大，终点降幅最高 70%（不超过 0.5）。
  */
-static int LimitSpeed(int v)
+static int scaleSpeed(int v)
 {
-    if (v > 100)
-        v = 100;
-    if (v < -100)
-        v = -100;
-    return v;
-}
+    int mag = (v < 0) ? -v : v;
+    int out;
 
+    // 限幅
+    if (mag > 100)
+        mag = 100;
+
+    // 死区：未缩放速度过小视为停止（防止摇杆回中漂移）
+    if (mag < JOY_DEAD_ZONE)
+        return 0;
+
+    // 中段：0.3 降幅（保留原手感）
+    if (mag <= MID_SEG_END)
+        out = mag * LOW_SCALE / 100;
+    // 高速段：补偿放大，突破 0.3 限制但不超过 HIGH_SCALE（0.5）
+    else
+        out = (MID_SEG_END * LOW_SCALE / 100) + (mag - MID_SEG_END) * (HIGH_SCALE - MID_SEG_END * LOW_SCALE / 100) / (100 - MID_SEG_END);
+
+    return (v < 0) ? -out : out;
+}
 /**
  * @brief 麦克纳姆轮全向移动（摇杆控制）
  * @param x 摇杆横向分量（-100~100）：负=左移，正=右移
@@ -277,7 +294,7 @@ static int LimitSpeed(int v)
  * @note  四轮差速组合（参考麦克纳姆全向底盘公式）：
  *          LF(FL) = (x + y)   LB(RL) = (y - x)
  *          RF(FR) = (y - x)   RB(RR) = (x + y)
- *        按 30% 比例缩放（整数运算 30/100），实现平滑全向移动。
+ *        速度经 scaleSpeed 分段缩放：死区停 / 中段 30% 降幅 / 高速段补偿至全速。
  */
 void Motors_move(char x, char y)
 {
@@ -293,11 +310,11 @@ void Motors_move(char x, char y)
     rf = y - x; // 右前轮 RF/FR
     rb = x + y; // 右后轮 RB/RR
 
-    // 限幅并按 30% 缩放（对应参考代码 0.3 倍速）
-    cfg.FL_speed = 30 * LimitSpeed(lf) / 100;
-    cfg.RL_speed = 30 * LimitSpeed(lb) / 100;
-    cfg.FR_speed = 30 * LimitSpeed(rf) / 100;
-    cfg.RR_speed = 30 * LimitSpeed(rb) / 100;
+    // 分段缩放：死区停 / 中段 30% 降幅 / 高速段补偿到全速（见 scaleSpeed）
+    cfg.FL_speed = scaleSpeed(lf);
+    cfg.RL_speed = scaleSpeed(lb);
+    cfg.FR_speed = scaleSpeed(rf);
+    cfg.RR_speed = scaleSpeed(rb);
 
     MotorDirver_PWM_Config(cfg);
 }
