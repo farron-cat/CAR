@@ -12,13 +12,12 @@
 #include "bsp_bluetooth.h"
 #include "bsp_control.h"
 #include "bsp_ultrasonic.h"
+#include "bsp_adc.h"
 
 #include <stdio.h>
 
 void main(void)
 {
-    float distance;
-    char result;
 
     EAXSFR(); // 使能扩展SFR（PWM需要）
 
@@ -35,6 +34,7 @@ void main(void)
     UART1Init();       // 初始化串口1（波特率115200，中断使能）
     BT_Init();         // 初始化蓝牙模块（UART2，波特率115200，中断使能）
     Ultrasonic_Init(); // 初始化超声波传感器
+    ADC_Init();        // 初始化ADC（用于测量电池电压）
 
     Timer0Init1ms();  // 配置Timer0 1ms中断，用于 tickMs 计时等
     Timer3Init10us(); // 配置Timer3 10us中断，驱动非阻塞超声波测距
@@ -45,15 +45,8 @@ void main(void)
 
     while (1)
     {
-        // result = Ultrasonic_GetDistance_NB(&distance); // 非阻塞：由Timer3 10us中断后台测量，不影响蓝牙遥控
-        // if (result == ULTRASONIC_OK)
-        // {
-        //     printf("Distance: %.2f cm\n", distance); // 打印距离
-        // }
-        // else if (result != ULTRASONIC_BUSY)
-        // {
-        //     printf("Ultrasonic error: %d\n", (int)result); // C51可变参数不提升char，必须显式转int，否则% d读到垃圾高位
-        // }
+        v
+            printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
 
         // UART1 串口调试（字符串命令，如 FORWARD/FW/STOP 等）：
         // UART1RxProcess();   // 串口接收超时判断：检测到一帧数据接收是否完成
