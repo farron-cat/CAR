@@ -199,34 +199,33 @@ static unsigned int Radar_CalcInterval(float dist)
 void Ultrasonic_Radar_Task(void)
 {
     float dist;
-    char ret;
+    char ret = Ultrasonic_GetDistance_NB(&dist); // 唯一调用点
 
-    // 1. stop beep when duration elapses
-    if (s_radarOn)
+    // 完成一次测量：打印（保留调试）+ 判范围
+    if (ret == ULTRASONIC_OK)
     {
-        if ((unsigned int)(tickMs - s_radarEndMs) >= RADAR_BEEP_MS)
+        printf("Distance: %.2f cm\n", dist); // 保留原有打印
+
+        if (dist >= RADAR_MIN_CM && dist <= RADAR_MAX_CM)
+        {
+            // 到间隔且未在鸣叫 → 触发
+            if (!s_radarOn && (unsigned int)(tickMs - s_radarLastMs) >= Radar_CalcInterval(dist))
+            {
+                Horn_PlayTone(RADAR_TONE);
+                s_radarLastMs = tickMs;
+                s_radarEndMs = tickMs;
+                s_radarOn = 1;
+            }
+        }
+        else if (s_radarOn) // 超出范围 → 停
         {
             Horn_stop();
             s_radarOn = 0;
         }
     }
 
-    // 2. get distance (non-blocking)
-    ret = Ultrasonic_GetDistance_NB(&dist);
-
-    // 3. if valid and within 2~20cm, beep by interval
-    if (ret == ULTRASONIC_OK && dist >= RADAR_MIN_CM && dist <= RADAR_MAX_CM)
-    {
-        if (!s_radarOn &&
-            (unsigned int)(tickMs - s_radarLastMs) >= Radar_CalcInterval(dist))
-        {
-            Horn_PlayTone(RADAR_TONE); // start beep (PWM keeps outputting)
-            s_radarLastMs = tickMs;
-            s_radarEndMs = tickMs;
-            s_radarOn = 1;
-        }
-    }
-    else if (s_radarOn) // out of range or measurement failed: stop immediately
+    // 鸣叫到时停止（独立于测距结果）
+    if (s_radarOn && (unsigned int)(tickMs - s_radarEndMs) >= RADAR_BEEP_MS)
     {
         Horn_stop();
         s_radarOn = 0;
