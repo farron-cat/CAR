@@ -1,10 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
 <Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_proj.xsd">
-
   <SchemaVersion>1.1</SchemaVersion>
-
   <Header>### uVision Project, (C) Keil Software</Header>
-
   <Targets>
     <Target>
       <TargetName>Target 1</TargetName>
@@ -17,7 +15,7 @@
           <Vendor>STC</Vendor>
           <Cpu>IRAM(0-0xFF) XRAM(0-0x1FFF) IROM(0-0xFFF8) CLOCK(35000000)</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
-          <StartupFile>"LIB\STARTUP.A51" ("Standard 8051 Startup Code")</StartupFile>
+          <StartupFile>&quot;LIB\STARTUP.A51&quot; (&quot;Standard 8051 Startup Code&quot;)</StartupFile>
           <FlashDriverDll></FlashDriverDll>
           <DeviceId>63364</DeviceId>
           <RegisterFile>STC8H.H</RegisterFile>
@@ -177,7 +175,7 @@
           </Flash1>
           <bUseTDR>0</bUseTDR>
           <Flash2></Flash2>
-          <Flash3>"" ()</Flash3>
+          <Flash3>&quot;&quot; ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -466,6 +464,11 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\bsp_control.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_ultrasonic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_ultrasonic.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -526,5 +529,4 @@
       </Groups>
     </Target>
   </Targets>
-
 </Project>

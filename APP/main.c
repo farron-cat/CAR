@@ -10,66 +10,16 @@
 #include "bsp_motor_dirver.h"
 #include "bsp_uart.h"
 #include "bsp_bluetooth.h"
-#include "bsp_control.h" // 字符串指令命令表与动作回调
+#include "bsp_control.h"
+#include "bsp_ultrasonic.h"
 
-// 鸣笛一次
-void BeepOnce(void)
-{
-    Horn_PlayTone(5); // 播放指定音调
-    delay_ms(200);    // 持续200ms
-    Horn_stop();      // 停止
-}
-
-// 鸣笛两次（两段之间间隔300ms）
-void BeepTwice(void)
-{
-    Horn_PlayTone(5);
-    delay_ms(200);
-    Horn_stop();
-    delay_ms(300);
-    Horn_PlayTone(5);
-    delay_ms(200);
-    Horn_stop();
-}
-
-// 向前跑5秒
-void RunForward5s(void)
-{
-    Motors_Forward(70); // 全速前进，速度70）
-    delay_ms(5000);     // 持续5秒
-    Motors_Stop();      // 停止
-}
-
-// 原地打转
-void RunAround(void)
-{
-    Motors_Around(70, 0); // 原地打转（逆时针），速度70）
-    delay_ms(3000);       // 持续3秒
-    Motors_Stop();        // 停止
-}
-
-/**
- * @brief 按键扫描 KEY 与 KEY_C 并响应对应动作
- * @note 建议周期调用（与主循环一致，约10ms），保证按键状态判断正确
- */
-void Key_Task(void)
-{
-    KeyEvent evC = KeyC_Scan(); // 扫描核心板按键 KEY_C
-    KeyEvent evK = Key_Scan();  // 扫描扩展板按键 KEY
-
-    if (evC == KEY_SHORT_PRESS)
-        RunForward5s(); // 短按 KEY_C，向前跑5秒
-    else if (evC == KEY_LONG_PRESS)
-        BeepOnce(); // 长按 KEY_C，鸣笛一声
-
-    if (evK == KEY_SHORT_PRESS)
-        RunAround(); // 短按 KEY，原地打转
-    else if (evK == KEY_LONG_PRESS)
-        BeepTwice(); // 长按 KEY，鸣笛两声
-}
+#include <stdio.h>
 
 void main(void)
 {
+    float distance;
+    char result;
+
     EAXSFR(); // 使能扩展SFR（PWM需要）
 
     Light_Init(); // 初始化小车灯光
@@ -79,22 +29,38 @@ void main(void)
     Light_SetState(LIGHT_TRACK, LIGHT_OFF);
     Light_SetState(LIGHT_RANGE, LIGHT_OFF);
 
-    Motor_Init();    // 初始化电机
-    Horn_Init();     // 初始化喇叭
-    KeyInit();       // 初始化按键 KEY / KEY_C
-    Timer0Init1ms(); // 配置Timer0 1ms中断，用于 tickMs 计时等
-    UART1Init();     // 初始化串口1（波特率115200，中断使能）
-    BT_Init();       // 初始化蓝牙模块（UART2，波特率115200，中断使能）
+    Motor_Init();      // 初始化电机
+    Horn_Init();       // 初始化喇叭
+    KeyInit();         // 初始化按键 KEY / KEY_C
+    UART1Init();       // 初始化串口1（波特率115200，中断使能）
+    BT_Init();         // 初始化蓝牙模块（UART2，波特率115200，中断使能）
+    Ultrasonic_Init(); // 初始化超声波传感器
+
+    Timer0Init1ms();  // 配置Timer0 1ms中断，用于 tickMs 计时等
+    Timer3Init10us(); // 配置Timer3 10us中断，驱动非阻塞超声波测距
 
     EA = 1; // 使能全局中断
+
+    printf("UART1 OK\r\n");
+
     while (1)
     {
+        result = Ultrasonic_GetDistance_NB(&distance); // 非阻塞：由Timer3 10us中断后台测量，不影响蓝牙遥控
+        if (result == ULTRASONIC_OK)
+        {
+            printf("Distance: %.2f cm\n", distance); // 打印距离
+        }
+        else if (result != ULTRASONIC_BUSY)
+        {
+            printf("Ultrasonic error: %d\n", (int)result); // C51可变参数不提升char，必须显式转int，否则% d读到垃圾高位
+        }
+
         // UART1 串口调试（字符串命令，如 FORWARD/FW/STOP 等）：
         // UART1RxProcess();   // 串口接收超时判断：检测到一帧数据接收是否完成
         // UART1_ProcessCommands(g_uartCmds, g_uartCmdCount);
 
-        BT_RxProcess();     // 蓝牙(UART2)接收超时判断：检测到一帧数据接收是否完成
-        BT_UART1_Forward(); // 将蓝牙(UART2)收到的数据原样转发至UART1
+        BT_RxProcess(); // 蓝牙(UART2)接收超时判断：检测到一帧数据接收是否完成
+        // BT_UART1_Forward(); // 将蓝牙(UART2)收到的数据原样转发至UART1
         // 手机小程序（蓝牙）遥控：解析协议帧（摇杆 + A/B/C/D 按键）并驱动小车
         BT_Remote_Control();
 

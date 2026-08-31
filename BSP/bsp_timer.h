@@ -30,4 +30,12 @@ void Timer0Init1ms(void);
  */
 void Timer1Init1ms(void);
 
+/**
+ * @brief Timer3初始化（10us定时中断）
+ * @note 配置Timer3为16位自动重载模式，时钟源1T，定时初值对应10us中断一次。
+ * @note 使能Timer3中断，优先级0。调用后需开启全局中断（EA = 1）。
+ * @note 中断服务函数推进非阻塞超声波测距状态机，需配合 bsp_ultrasonic 使用。
+ */
+void Timer3Init10us(void);
+
 #endif // BSP_TIMER_H

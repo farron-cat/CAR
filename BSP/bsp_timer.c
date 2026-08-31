@@ -13,6 +13,7 @@
 #include "STC8G_H_Timer.h"
 #include "STC8G_H_NVIC.h"
 #include "bsp_digital_led.h"
+#include "bsp_ultrasonic.h"  // 非阻塞超声波状态机（Timer3 10us 驱动）
 
 volatile unsigned char dutyUpdateFlag = 0; // 占空比更新标志
 volatile unsigned char tempDetectFlag = 0; // 温度检测标志
@@ -58,6 +59,29 @@ void Timer1Init1ms(void)
     Timer_Inilize(Timer1, &TIM_INIT_STRUCT); // 初始化Timer1
 
     NVIC_Timer1_Init(ENABLE, Priority_0); // 使能Timer1中断，优先级0
+}
+
+/**
+ * @brief Timer3初始化（10us定时中断）
+ * @note 配置Timer3为16位自动重载模式，时钟源1T
+ * @note 定时初值 = 65536 - (MAIN_Fosc / 100000)，即10us中断一次
+ * @note 使能Timer3中断，优先级0
+ * @note 中断服务函数推进非阻塞超声波测距状态机（Ultrasonic_NB_Isr）
+ */
+void Timer3Init10us(void)
+{
+    TIM_InitTypeDef TIM_INIT_STRUCT;
+
+    TIM_INIT_STRUCT.TIM_Mode = TIM_16BitAutoReload;                 // 指定工作模式 16位自动重载
+    TIM_INIT_STRUCT.TIM_ClkSource = TIM_CLOCK_1T;                   // 指定时钟源 1T
+    TIM_INIT_STRUCT.TIM_ClkOut = DISABLE;                           // 指定是否输出时钟 否
+    TIM_INIT_STRUCT.TIM_Value = 65536UL - (MAIN_Fosc / 100000UL);   // 指定初值 100kHz = 10us
+    TIM_INIT_STRUCT.TIM_PS = 0;                                     // 指定预分频系数 1
+    TIM_INIT_STRUCT.TIM_Run = ENABLE;                               // 指定是否启动定时器 是
+
+    Timer_Inilize(Timer3, &TIM_INIT_STRUCT); // 初始化Timer3
+
+    NVIC_Timer3_Init(ENABLE, Priority_0); // 使能Timer3中断，优先级0
 }
 
 // TODO: 临时放这里的函数
@@ -108,4 +132,14 @@ void Timer1_ISR_Handler(void) interrupt TMR1_VECTOR // 进中断时已经清除�
     RCLK = 0;
 
     position = (position + 1) % 8;
+}
+
+/**
+ * @brief Timer3中断服务函数（10us定时中断处理）
+ * @note 进中断时硬件已自动清除标志位
+ * @note 每10us触发一次，推进非阻塞超声波测距状态机
+ */
+void Timer3_ISR_Handler(void) interrupt TMR3_VECTOR // 进中断时已经清除标志
+{
+    Ultrasonic_NB_Isr(); // 非阻塞超声波：10us 节拍推进状态机
 }

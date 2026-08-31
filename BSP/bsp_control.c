@@ -112,6 +112,7 @@ void BT_Remote_Control(void)
     char y; // 摇杆纵向分量（有符号，负=后，正=前）
     u8 cur_A, cur_B, cur_C, cur_D;
 
+    // 1.帧接收
     // 判断是否有新数据到达（RX_Cnt 发生变化即有新帧）
     if (COM2.RX_Cnt != s_lastRxCnt)
     {
@@ -123,6 +124,7 @@ void BT_Remote_Control(void)
         s_idleCnt++; // 无新数据，空闲计数累加
     }
 
+    // 2.超时处理，蓝牙失联保护
     // 遥控空闲超时：手机停止发送（松开按键未发帧 / 蓝牙断开），安全停止电机
     if (s_idleCnt >= REMOTE_IDLE_TIMEOUT)
     {
@@ -140,6 +142,7 @@ void BT_Remote_Control(void)
     if (COM2.RX_Cnt < 8)
         return;
 
+    // 3.帧处理
     // 提取最新一帧状态（RX2_Buffer 尾部 8 字节，对应协议 buf[0..7]）
     x = (char)RX2_Buffer[COM2.RX_Cnt - 6]; // buf[2] 摇杆x
     y = (char)RX2_Buffer[COM2.RX_Cnt - 5]; // buf[3] 摇杆y
@@ -148,12 +151,13 @@ void BT_Remote_Control(void)
     cur_C = RX2_Buffer[COM2.RX_Cnt - 2];   // buf[6] C键
     cur_D = RX2_Buffer[COM2.RX_Cnt - 1];   // buf[7] D键
 
-    // 1. A键: 蜂鸣器/车灯（边缘触发，只在按下瞬间执行一次）
+    // (1. A键: 蜂鸣器/车灯（边缘触发，只在按下瞬间执行一次）
     if (cur_A == 1 && s_lastA == 0)
     {
         Horn_Beep(7, 100);
         Horn_Beep(8, 100);
         Horn_Beep(9, 100);
+
         if (led_flag == 0)
         { // 原来是灭，需要开灯
             Light_SetState(LIGHT_RUN, LIGHT_ON);
@@ -170,15 +174,15 @@ void BT_Remote_Control(void)
     }
     s_lastA = cur_A; // 记录A键本次状态
 
-    // 2. B键: 巡线开关（边缘触发，先留空占位，暂不实现）
+    // (2. B键: 巡线开关（边缘触发，先留空占位，暂不实现）
     if (cur_B == 1 && s_lastB == 0)
     {
         // TODO: 开启/关闭巡线功能（巡线任务后续实现）
     }
     s_lastB = cur_B; // 记录B键本次状态
 
-    // 3. 运动控制
-    //    C/D键: 原地旋转（电平触发：按下持续转，松开停止）
+    // (3. 运动控制
+    // C/D键: 原地旋转（电平触发：按下持续转，松开停止）
     if (cur_C == 1)
     { // 按下C: 左旋转
         if (is_turning == 0)
@@ -204,7 +208,7 @@ void BT_Remote_Control(void)
         }
     }
 
-    // 4. 摇杆控制: 只有在没有按下旋转按键时，摇杆才生效
+    // （4. 摇杆控制: 只有在没有按下旋转按键时，摇杆才生效
     if (is_turning == 0)
     {
         Motors_move(x, y); // 麦克纳姆全向移动
