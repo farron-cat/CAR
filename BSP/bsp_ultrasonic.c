@@ -7,6 +7,8 @@
 #include "bsp_ultrasonic.h"
 #include "STC8G_H_GPIO.h" // GPIO_Inilize / GPIO_InitTypeDef
 #include "bsp_delay.h"    // delay_us (blocking API)
+#include "bsp_horn.h"     // Horn_PlayTone / Horn_stop（雷达鸣叫）
+#include "bsp_timer.h"    // tickMs（非阻塞计时）
 
 /**
  * @brief Init pinst + Timer3 10us ISR tick.
@@ -166,4 +168,67 @@ char Ultrasonic_GetDistance_NB(float *distance)
     }
 
     return ULTRASONIC_BUSY;
+}
+/* ---------- Radar beep task (non-blocking) ---------- */
+
+#define RADAR_MAX_CM 20.0f // trigger upper limit (cm)
+#define RADAR_MIN_CM 2.0f  // trigger lower limit (cm)
+#define RADAR_BEEP_MS 200  // beep duration (ms)
+#define RADAR_TONE 1       // tone number (1~28)
+
+static unsigned int s_radarLastMs = 0; // last beep start time (tickMs)
+static unsigned char s_radarOn = 0;    // 1=beeping
+static unsigned int s_radarEndMs = 0;  // current beep end time
+
+// interval mapping: 2cm->100ms, 20cm->3000ms (linear)
+static unsigned int Radar_CalcInterval(float dist)
+{
+    float t;
+    if (dist < RADAR_MIN_CM)
+        dist = RADAR_MIN_CM;
+    if (dist > RADAR_MAX_CM)
+        dist = RADAR_MAX_CM;
+    t = (dist - RADAR_MIN_CM) / (RADAR_MAX_CM - RADAR_MIN_CM); // 0~1
+    return (unsigned int)(100u + (3000u - 100u) * t);
+}
+
+/**
+ * @brief Radar beep task (non-blocking, call every ~10ms in main loop)
+ * @note Beep interval: 20cm->3s, 2cm->0.1s (linear).
+ */
+void Ultrasonic_Radar_Task(void)
+{
+    float dist;
+    char ret;
+
+    // 1. stop beep when duration elapses
+    if (s_radarOn)
+    {
+        if ((unsigned int)(tickMs - s_radarEndMs) >= RADAR_BEEP_MS)
+        {
+            Horn_stop();
+            s_radarOn = 0;
+        }
+    }
+
+    // 2. get distance (non-blocking)
+    ret = Ultrasonic_GetDistance_NB(&dist);
+
+    // 3. if valid and within 2~20cm, beep by interval
+    if (ret == ULTRASONIC_OK && dist >= RADAR_MIN_CM && dist <= RADAR_MAX_CM)
+    {
+        if (!s_radarOn &&
+            (unsigned int)(tickMs - s_radarLastMs) >= Radar_CalcInterval(dist))
+        {
+            Horn_PlayTone(RADAR_TONE); // start beep (PWM keeps outputting)
+            s_radarLastMs = tickMs;
+            s_radarEndMs = tickMs;
+            s_radarOn = 1;
+        }
+    }
+    else if (s_radarOn) // out of range or measurement failed: stop immediately
+    {
+        Horn_stop();
+        s_radarOn = 0;
+    }
 }

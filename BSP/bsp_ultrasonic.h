@@ -29,4 +29,10 @@ char Ultrasonic_GetDistance_NB(float *distance);
 
 void Ultrasonic_NB_Isr(void);
 
+/**
+ * @brief Radar beep task (non-blocking).
+ * @note Call every ~10ms in main loop. Beep interval: 20cm->3s, 2cm->0.5s.
+ */
+void Ultrasonic_Radar_Task(void);
+
 #endif // BSP_ULTRASONIC_H
