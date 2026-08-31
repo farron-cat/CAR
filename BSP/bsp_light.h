@@ -1,5 +1,5 @@
-#ifndef __BSP_LIGHT_H
-#define __BSP_LIGHT_H
+#ifndef BSP_LIGHT_H
+#define BSP_LIGHT_H
 
 #include "Config.h"
 
@@ -8,11 +8,11 @@
  */
 typedef enum
 {
-    LIGHT_RUN = 0,  /* 运行指示灯 */
-    LIGHT_LEFT,     /* 左车灯 */
-    LIGHT_RIGHT,    /* 右车灯 */
-    LIGHT_TRACK, /* 巡线指示灯 */
-    LIGHT_RANGE     /* 测距指示灯 */
+    LIGHT_RUN = 0, /* 运行指示灯 */
+    LIGHT_LEFT,    /* 左车灯 */
+    LIGHT_RIGHT,   /* 右车灯 */
+    LIGHT_TRACK,   /* 巡线指示灯 */
+    LIGHT_RANGE    /* 测距指示灯 */
 } Light_IndexTypeDef;
 
 /**
@@ -21,7 +21,7 @@ typedef enum
 typedef enum
 {
     LIGHT_OFF = 0,
-    LIGHT_ON  = 1
+    LIGHT_ON = 1
 } Light_StateTypeDef;
 
 void Light_Init(void);
