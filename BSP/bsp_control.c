@@ -195,7 +195,7 @@ void BT_Remote_Control(void)
     { // 按下C: 左旋转
         if (is_turning == 0)
         {
-            Motors_Around(REMOTE_TURN_SPEED, 1);
+            Motors_Around(REMOTE_TURN_SPEED, 0);
             is_turning = 1;
         }
     }
@@ -203,7 +203,7 @@ void BT_Remote_Control(void)
     { // 按下D: 右旋转
         if (is_turning == 0)
         {
-            Motors_Around(REMOTE_TURN_SPEED, 0);
+            Motors_Around(REMOTE_TURN_SPEED, 1);
             is_turning = 1;
         }
     }

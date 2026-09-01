@@ -8,8 +8,6 @@
  *              采样 → 位置 → 丢线处理（外推/搜索）→ PID → 左右差速驱动电机。
  * @note    依赖 STC8G_H_GPIO.h（GPIO）、bsp_motor_dirver.h（差速电机）、
  *          bsp_timer.h（tickMs 丢线计时）。
- * @note    电机方向修正：本车电机正速度=实际后退（同遥控取反逻辑），
- *          循迹通过 TRACKER_DIR_SIGN(-1) 修正为正向前进；丢线搜索方向同步取反。
  */
 
 #include "STC8G_H_GPIO.h"
@@ -18,21 +16,11 @@
 #include "bsp_timer.h"        // tickMs（丢线计时）
 
 /* ==================== 循迹任务配置 ==================== */
-#define TRACKER_BASE_SPEED 20   // 循迹基础速度（最低有效档，电机死区下限）
-#define TRACKER_LOST_SPEED 20   // 丢线外推找回时的行驶速度（保持最低有效档）
+#define TRACKER_BASE_SPEED 30   // 循迹基础速度（最低有效档，电机死区下限）
+#define TRACKER_LOST_SPEED 30   // 丢线外推找回时的行驶速度（保持最低有效档）
 #define TRACKER_LOST_MS 400     // 丢线后先外推找回的时长（ms），超过则原地搜索
-#define TRACKER_SEARCH_SPEED 20 // 丢线搜索旋转速度（最低有效档）
+#define TRACKER_SEARCH_SPEED 30 // 丢线搜索旋转速度（最低有效档）
 #define TRACKER_POS_MAX 64      // 位置限幅（对应权重两极）
-
-// 电机方向修正：本车电机"正速度"实际驱动后退（与 bsp_motor_dirver.c
-// Motors_move() 的摇杆取反逻辑一致），循迹前进方向需取 -1 修正为正向前进。
-#define TRACKER_DIR_SIGN (-1)
-
-// 传感器左右方向修正：实测循迹左右转向与预期相反，且遥控左右平移正常
-// （电机左右通道映射正确），判定循迹传感器阵列左右与车身相反。
-// 取 -1 翻转 position 符号，使 position>0 统一表示"线在车右侧"，
-// 差速转向、丢线外推、丢线搜索方向三者随之自洽。
-#define TRACKER_SENSOR_FLIP (-1)
 
 #define TRACKER_KP 1.2f       // 比例系数
 #define TRACKER_KI 0.03f      // 积分系数（很小，避免过冲）
@@ -275,12 +263,11 @@ void Tracker_Update(void)
         else
         {
             // 阶段2：原地旋转搜索（沿最后丢失方向）
-            // 电机方向取反后，Motors_Around 的旋转方向也随之反转：
             // s_lastDir>=0：线最后在右侧 → 顺时针右转搜索；否则逆时针左转
             if (s_lastDir >= 0)
-                Motors_Around(TRACKER_SEARCH_SPEED, 0); // 取反后：顺时针=右转
+                Motors_Around(TRACKER_SEARCH_SPEED, 1);
             else
-                Motors_Around(TRACKER_SEARCH_SPEED, 1); // 取反后：逆时针=左转
+                Motors_Around(TRACKER_SEARCH_SPEED, 0);
             return;
         }
     }
@@ -295,9 +282,6 @@ void Tracker_Update(void)
             s_baseSpeed = TRACKER_BASE_SPEED;
         }
         position /= count; // 加权平均
-        // 传感器左右方向修正：position>0 统一表示"线在车右侧"，
-        // 与差速转向 / 丢线外推 / 丢线搜索方向保持自洽
-        position *= TRACKER_SENSOR_FLIP;
         s_lastPosition = position;
         if (position > 4)
             s_lastDir = 1; // 线偏右
@@ -306,18 +290,17 @@ void Tracker_Update(void)
     }
 
     // 2. PID 计算：error = 目标(0) - 当前位置 → 正=线偏左(左转)，负=线偏右(右转)
-    turn = (int)PID_Calc(&s_pid, (float)(-position));
+    turn = (int)PID_Calc(&s_pid, (float)(position));
 
     // 3. 差速映射：转向量正值→左轮慢右轮快（左转），负值→右轮慢左轮快（右转）
     leftSpeed = Tracker_ClampSpeed(s_baseSpeed - turn);
     rightSpeed = Tracker_ClampSpeed(s_baseSpeed + turn);
 
     // 4. 驱动电机（四轮差速：同侧一致）
-    //    电机方向修正：TRACKER_DIR_SIGN=-1，将正速度修正为正向行驶
-    cfg.RR_speed = TRACKER_DIR_SIGN * rightSpeed; // 右后
-    cfg.RL_speed = TRACKER_DIR_SIGN * leftSpeed;  // 左后
-    cfg.FR_speed = TRACKER_DIR_SIGN * rightSpeed; // 右前
-    cfg.FL_speed = TRACKER_DIR_SIGN * leftSpeed;  // 左前
+    cfg.RR_speed = rightSpeed; // 右后
+    cfg.RL_speed = leftSpeed;  // 左后
+    cfg.FR_speed = rightSpeed; // 右前
+    cfg.FL_speed = leftSpeed;  // 左前
     MotorDirver_PWM_Config(cfg);
 }
 

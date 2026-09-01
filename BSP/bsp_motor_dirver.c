@@ -38,7 +38,7 @@
  *          - speed=-100（最大后退）=> 占空比 100（B_Max）
  *          - speed=0              => 占空比  50
  *          - speed=100（最大前进）=> 占空比   0（F_Max）
- * @note  原始线性映射：duty = -(speed / 2) + 50。
+ * @note  原始线性映射：duty = (speed / 2) + 50。
  *        摇杆低速段的 0.3 降幅与高速段补偿由 Motors_move / scaleSpeed 处理。
  */
 int speed2duty(int speed)
@@ -47,7 +47,7 @@ int speed2duty(int speed)
         speed = 100;
     if (speed < -100)
         speed = -100;
-    return -(speed / 2) + 50;
+    return (speed / 2) + 50;
 }
 /**
  * @brief 根据四项速度配置 PWM1 ~ PWM4 的占空比与输出通道
@@ -165,15 +165,15 @@ void Motors_Left(int speed, int dir)
     // 右侧轮子向外
     if (dir == 0 | dir == 1)
     {
-        cfg.RR_speed = -speed; // 右后轮向后
-        cfg.FR_speed = speed;  // 右前轮向前
+        cfg.FR_speed = speed; // 右前轮向前
+        cfg.RL_speed = speed; // 左后轮向前
     }
 
     // 左侧轮子向内
     if (dir == 0 | dir == -1)
     {
+        cfg.RR_speed = -speed; // 右后轮向后
         cfg.FL_speed = -speed; // 左前轮向后
-        cfg.RL_speed = speed;  // 左后轮向前
     }
 
     MotorDirver_PWM_Config(cfg);
@@ -194,14 +194,14 @@ void Motors_Right(int speed, int dir)
     // 右侧轮子向内
     if (dir == 0 | dir == 1)
     {
-        cfg.RR_speed = speed;  // 右后轮向前
-        cfg.FR_speed = -speed; // 右前轮向后
+        cfg.RR_speed = speed; // 右后轮向前
+        cfg.FL_speed = speed; // 左前轮向前
     }
 
     // 左侧轮子向外
     if (dir == 0 | dir == -1)
     {
-        cfg.FL_speed = speed;  // 左前轮向前
+        cfg.FR_speed = -speed; // 右前轮向后
         cfg.RL_speed = -speed; // 左后轮向后
     }
 
@@ -294,10 +294,6 @@ void Motors_move(char x, char y)
 {
     MotorDriverConfig cfg = {0, 0, 0, 0};
     int lf, lb, rf, rb; // 各轮目标速度（未缩放）
-
-    // 摇杆方向校正：实测摇杆输入与小车实际运动方向相反（上下/左右均反），取反处理
-    x = (char)(-x);
-    y = (char)(-y);
 
     lf = x + y; // 左前轮 LF/FL
     lb = y - x; // 左后轮 LB/RL

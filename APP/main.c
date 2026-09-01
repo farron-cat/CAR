@@ -25,7 +25,6 @@ void main(void)
     Light_Init();       // 初始化小车灯光
     Light_TurnOffAll(); // 默认关闭所有灯
 
-    Motor_Init();      // 初始化电机
     Horn_Init();       // 初始化喇叭
     KeyInit();         // 初始化按键 KEY / KEY_C
     UART1Init();       // 初始化串口1（波特率115200，中断使能）
@@ -43,7 +42,7 @@ void main(void)
     while (1)
     {
         // ADC电池电压测量
-        // printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
+        printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
 
         // 串口1调试
         // UART1 串口调试（字符串命令，如 FORWARD/FW/STOP 等）：
