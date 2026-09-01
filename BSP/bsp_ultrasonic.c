@@ -16,19 +16,19 @@
  */
 
 #include "bsp_ultrasonic.h"
-#include "STC8G_H_GPIO.h"   // GPIO_Inilize / GPIO_InitTypeDef
-#include "STC8G_H_Exti.h"   // Ext_Inilize / EXT_INT1 / EXT_MODE_RiseFall
-#include "STC8G_H_Timer.h"  // Timer_Inilize / Timer3_Run / Timer3_Stop
-#include "STC8G_H_NVIC.h"   // NVIC_INT1_Init / NVIC_Timer3_Init
-#include "bsp_delay.h"      // delay_us（产生触发脉冲）
-#include "bsp_horn.h"       // Horn_PlayTone / Horn_stop（雷达鸣叫）
-#include "bsp_timer.h"      // tickMs（非阻塞超时计时）
+#include "STC8G_H_GPIO.h"  // GPIO_Inilize / GPIO_InitTypeDef
+#include "STC8G_H_Exti.h"  // Ext_Inilize / EXT_INT1 / EXT_MODE_RiseFall
+#include "STC8G_H_Timer.h" // Timer_Inilize / Timer3_Run / Timer3_Stop
+#include "STC8G_H_NVIC.h"  // NVIC_INT1_Init / NVIC_Timer3_Init
+#include "bsp_delay.h"     // delay_us（产生触发脉冲）
+#include "bsp_horn.h"      // Horn_PlayTone / Horn_stop（雷达鸣叫）
+#include "bsp_timer.h"     // tickMs（非阻塞超时计时）
 
 /* 测距状态机状态定义 */
-#define US_IDLE      0 // 空闲，可启动新测量
+#define US_IDLE 0      // 空闲，可启动新测量
 #define US_WAIT_ECHO 1 // 已发触发，等待 ECHO 上升沿
 #define US_WAIT_FALL 2 // 上升沿已到，Timer3 计时中，等待下降沿
-#define US_DONE      3 // 测量完成，结果已就绪
+#define US_DONE 3      // 测量完成，结果已就绪
 
 #define US_TIMEOUT_MS 60 // 单次测量超时（ms），覆盖无回波/超量程
 
@@ -240,7 +240,7 @@ void Ultrasonic_Radar_Task(void)
     // 完成一次测量：打印结果（保留调试）并判断是否触发
     if (ret == ULTRASONIC_OK)
     {
-        printf("Distance: %.2f cm\n", dist); // 打印距离
+        // printf("Distance: %.2f cm\n", dist); // 打印距离
 
         if (dist >= RADAR_MIN_CM && dist <= RADAR_MAX_CM)
         {

@@ -14,7 +14,6 @@
 
 #include "STC8G_H_Timer.h"
 #include "STC8G_H_NVIC.h"
-#include "bsp_digital_led.h"
 
 volatile unsigned char dutyUpdateFlag = 0; // 占空比更新标志
 volatile unsigned char tempDetectFlag = 0; // 温度检测标志
@@ -94,20 +93,7 @@ void Timer0_ISR_Handler(void) interrupt TMR0_VECTOR // 进中断时已经清除�
 /**
  * @brief Timer1中断服务函数（1ms定时中断处理）
  * @note 进中断时硬件已自动清除标志位
- * @note 每1ms触发一次，执行数码管动态扫描：按 position 依次发送
- *       显示缓冲与段码，并在发送移入数据后切换下一位扫描位置。
  */
 void Timer1_ISR_Handler(void) interrupt TMR1_VECTOR // 进中断时已经清除标志
 {
-    // 数码管扫描
-    static unsigned char position = 0;
-
-    SendByte(displayBuffer[position]);
-    SendByte(digCodeTable[position]);
-
-    // 移入数据
-    RCLK = 1;
-    RCLK = 0;
-
-    position = (position + 1) % 8;
 }

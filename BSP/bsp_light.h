@@ -26,6 +26,6 @@ typedef enum
 
 void Light_Init(void);
 void Light_SetState(Light_IndexTypeDef id, Light_StateTypeDef state);
-void Light_ToggleState(Light_IndexTypeDef id);
+void Light_TurnOffAll(void);
 
 #endif

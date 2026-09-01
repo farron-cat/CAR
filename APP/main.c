@@ -22,12 +22,8 @@ void main(void)
 
     EAXSFR(); // 使能扩展SFR（PWM需要）
 
-    Light_Init(); // 初始化小车灯光
-    Light_SetState(LIGHT_RUN, LIGHT_OFF);
-    Light_SetState(LIGHT_LEFT, LIGHT_OFF);
-    Light_SetState(LIGHT_RIGHT, LIGHT_OFF);
-    Light_SetState(LIGHT_TRACK, LIGHT_OFF);
-    Light_SetState(LIGHT_RANGE, LIGHT_OFF);
+    Light_Init();       // 初始化小车灯光
+    Light_TurnOffAll(); // 默认关闭所有灯
 
     Motor_Init();      // 初始化电机
     Horn_Init();       // 初始化喇叭
@@ -42,28 +38,34 @@ void main(void)
 
     EA = 1; // 使能全局中断
 
-    printf("UART1 OK\r\n");
+    // printf("UART1 OK\r\n");
 
     while (1)
     {
+        // ADC电池电压测量
+        // printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
 
-        printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
-
+        // 串口1调试
         // UART1 串口调试（字符串命令，如 FORWARD/FW/STOP 等）：
         // UART1RxProcess();   // 串口接收超时判断：检测到一帧数据接收是否完成
         // UART1_ProcessCommands(g_uartCmds, g_uartCmdCount);
 
+        // 蓝牙调试
         BT_RxProcess(); // 蓝牙(UART2)接收超时判断：检测到一帧数据接收是否完成
         // BT_UART1_Forward(); // 将蓝牙(UART2)收到的数据原样转发至UART1
-        // 手机小程序（蓝牙）遥控：解析协议帧（摇杆 + A/B/C/D 按键）并驱动小车
-        // B 键切换循迹模式；循迹开启时摇杆/旋转键不再驱动电机（模式互斥）
-        BT_Remote_Control();
-        Tracker_Update();        // 循迹任务（约10ms周期；未开启循迹时直接返回）
-        Ultrasonic_Radar_Task(); // 雷达鸣叫（非阻塞，2cm→0.5s、20cm→3s）
-
-        // Key_Task(); // 周期扫描并响应 KEY / KEY_C
-
         // BT_StatusReport(); // 周期打印蓝牙状态，每10ms调用一次，约500ms打印一次（可注释）
+
+        // 蓝牙遥控
+        BT_Remote_Control();
+
+        // 循迹状态更新
+        Tracker_Update(); // 循迹任务（约10ms周期；未开启循迹时直接返回）
+
+        // 超声波距离雷达
+        // Ultrasonic_Radar_Task(); // 雷达鸣叫（非阻塞，2cm→0.5s、20cm→3s）
+
+        // 按键任务
+        // Key_Task(); // 周期扫描并响应 KEY / KEY_C
 
         delay_ms(10); // 简单延时节拍，10ms左右，保证时序正确
     }

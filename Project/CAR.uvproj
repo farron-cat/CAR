@@ -392,19 +392,9 @@
               <FilePath>..\BSP\bsp_delay.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_digital_led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\bsp_digital_led.c</FilePath>
-            </File>
-            <File>
               <FileName>bsp_led.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_led.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_motor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\bsp_motor.c</FilePath>
             </File>
             <File>
               <FileName>bsp_light.c</FileName>

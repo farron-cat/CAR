@@ -65,7 +65,7 @@ void Light_SetState(Light_IndexTypeDef id, Light_StateTypeDef state)
 }
 
 /**
- * @brief LED状态翻转。
+ * @brief LED状态翻转
  * @param id 灯的编号
  */
 void Light_ToggleState(Light_IndexTypeDef id)
@@ -88,4 +88,16 @@ void Light_ToggleState(Light_IndexTypeDef id)
         LIGHT_RANGE_PIN = !LIGHT_RANGE_PIN;
         break;
     }
+}
+
+/**
+ * @brief 关闭所有灯
+ */
+void Light_TurnOffAll(void)
+{
+    Light_SetState(LIGHT_RUN, LIGHT_OFF);
+    Light_SetState(LIGHT_LEFT, LIGHT_OFF);
+    Light_SetState(LIGHT_RIGHT, LIGHT_OFF);
+    Light_SetState(LIGHT_TRACK, LIGHT_OFF);
+    Light_SetState(LIGHT_RANGE, LIGHT_OFF);
 }
