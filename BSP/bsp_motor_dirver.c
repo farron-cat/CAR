@@ -22,10 +22,10 @@
 #define DEAD_TIME 15 // 24MHz 下约 625ns，35MHz 下约 429ns，安全起步值
 
 // ---------- 摇杆分段速度缩放（仅摇杆路径 Motors_move 内生效） ----------
-#define JOY_DEAD_ZONE 10 // 摇杆死区：未缩放速度 |v| < 10 视为停止（防止回中漂移）
-#define MID_SEG_END 98   // 中段终点（未缩放速度）：中段保留 0.3 降幅（10~98）
-#define LOW_SCALE 30     // 中段降幅比例（%）：0.3
-#define HIGH_SCALE 50    // 高速段终点降幅（%）：突破 0.3 但不超过 0.5
+#define JOY_DEAD_ZONE 10  // 摇杆死区：未缩放速度 |v| < 10 视为停止（防止回中漂移）
+#define MID_SEG_END 98    // 中段终点（未缩放速度）：中段保留 0.3 降幅（10~98）
+#define LOW_SCALE 30      // 中段降幅比例（%）：0.3
+#define HIGH_SCALE 50     // 高速段终点降幅（%）：突破 0.3 但不超过 0.5
 #define MIN_MOVE_SPEED 20 // 电机天然死区下限：输出速度低于此值电机转不动，中段垫底消除死区
 
 /**
