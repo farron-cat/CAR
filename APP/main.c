@@ -13,6 +13,7 @@
 #include "bsp_control.h"
 #include "bsp_ultrasonic.h"
 #include "bsp_adc.h"
+#include "bsp_tracker.h"
 
 #include <stdio.h>
 
@@ -35,6 +36,7 @@ void main(void)
     BT_Init();         // 初始化蓝牙模块（UART2，波特率115200，中断使能）
     Ultrasonic_Init(); // 初始化超声波传感器
     ADC_Init();        // 初始化ADC（用于测量电池电压）
+    Tracker_Init();    // 初始化循迹传感器 + 内部PID（蓝牙B键开关循迹）
 
     Timer0Init1ms(); // 配置Timer0 1ms中断，用于 tickMs 计时等
 
@@ -54,7 +56,9 @@ void main(void)
         BT_RxProcess(); // 蓝牙(UART2)接收超时判断：检测到一帧数据接收是否完成
         // BT_UART1_Forward(); // 将蓝牙(UART2)收到的数据原样转发至UART1
         // 手机小程序（蓝牙）遥控：解析协议帧（摇杆 + A/B/C/D 按键）并驱动小车
+        // B 键切换循迹模式；循迹开启时摇杆/旋转键不再驱动电机（模式互斥）
         BT_Remote_Control();
+        Tracker_Update();        // 循迹任务（约10ms周期；未开启循迹时直接返回）
         Ultrasonic_Radar_Task(); // 雷达鸣叫（非阻塞，2cm→0.5s、20cm→3s）
 
         // Key_Task(); // 周期扫描并响应 KEY / KEY_C

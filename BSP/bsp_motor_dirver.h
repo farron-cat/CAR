@@ -21,11 +21,24 @@
 #define MOTOR_FL_B P17 // 左前轮反转 PWM4N
 
 /**
- * @brief 根据四项速度配置 PWM 输出（底层接口，一般由高级运动接口内部调用）
+ * @brief 四轮速度配置结构体
+ * @note  速度范围 -100 ~ 100：正数前进，负数后退，0 停止。
+ *        RR_speed 右后轮、RL_speed 左后轮、FR_speed 右前轮、FL_speed 左前轮。
+ */
+typedef struct
+{
+    int RR_speed; // 右后轮速度
+    int RL_speed; // 左后轮速度
+    int FR_speed; // 右前轮速度
+    int FL_speed; // 左前轮速度
+} MotorDriverConfig;
+
+/**
+ * @brief 根据四项速度配置 PWM 输出（底层接口，高级运动接口与差速循迹均调用）
  * @param cfg 各轮速度配置 MotorDriverConfig（RR/RL/FR/FL_speed，范围 -100~100）
  * @note  高级运动接口（Motors_Forward 等）最终都调用本函数完成 PWM 配置。
  */
-void MotorDirver_PWM_Config();
+void MotorDirver_PWM_Config(MotorDriverConfig cfg);
 
 /**
  * @brief 四轮全速前进

@@ -13,6 +13,7 @@
 #include "bsp_bluetooth.h"    // UART2_RxFlag（蓝牙接收完成标志）
 #include "bsp_light.h"        // Light_SetState / LIGHT_RUN / LIGHT_LEFT / LIGHT_RIGHT
 #include "bsp_horn.h"         // Horn_Beep
+#include "bsp_tracker.h"      // Tracker_Toggle / Tracker_Running（循迹模式开关/查询）
 
 // 小车移动速度（0~100，值越大越快），供各指令回调使用
 #define CAR_SPEED 70
@@ -125,10 +126,11 @@ void BT_Remote_Control(void)
     }
 
     // 2.超时处理，蓝牙失联保护
-    // 遥控空闲超时：手机停止发送（松开按键未发帧 / 蓝牙断开），安全停止电机
+    // 遥控空闲超时：手机停止发送（松开按键未发帧 / 蓝牙断开），安全停止电机。
+    // 循迹模式下电机由循迹任务控制，遥控超时仅复位按键状态，不停止电机。
     if (s_idleCnt >= REMOTE_IDLE_TIMEOUT)
     {
-        if (is_turning == 1)
+        if (is_turning == 1 && !Tracker_Running())
         {
             Motors_Stop(); // 电机停止
             is_turning = 0;
@@ -174,12 +176,18 @@ void BT_Remote_Control(void)
     }
     s_lastA = cur_A; // 记录A键本次状态
 
-    // (2. B键: 巡线开关（边缘触发，先留空占位，暂不实现）
+    // (2. B键: 循迹（巡线）模式开关（边缘触发）
+    // 按下 B 键切换循迹模式：循迹开启后摇杆/旋转键不再控制电机，
+    // 再次按 B 关闭循迹并停车。
     if (cur_B == 1 && s_lastB == 0)
     {
-        // TODO: 开启/关闭巡线功能（巡线任务后续实现）
+        Tracker_Toggle();
     }
     s_lastB = cur_B; // 记录B键本次状态
+
+    // 循迹模式下，遥控摇杆/旋转不驱动电机（模式互斥）
+    if (Tracker_Running())
+        return;
 
     // (3. 运动控制
     // C/D键: 原地旋转（电平触发：按下持续转，松开停止）

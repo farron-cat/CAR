@@ -28,14 +28,6 @@
 #define HIGH_SCALE 50    // 高速段终点降幅（%）：突破 0.3 但不超过 0.5
 #define MIN_MOVE_SPEED 20 // 电机天然死区下限：输出速度低于此值电机转不动，中段垫底消除死区
 
-typedef struct
-{
-    int RR_speed; // 右后轮速度
-    int RL_speed; // 左后轮速度
-    int FR_speed; // 右前轮速度
-    int FL_speed; // 左前轮速度
-} MotorDriverConfig;
-
 /**
  * @brief 将速度值映射为 PWM 占空比
  * @param speed 速度值，范围 -100 ~ 100：
