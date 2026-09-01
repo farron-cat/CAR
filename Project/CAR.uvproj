@@ -476,6 +476,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_adc.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_tracker.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_tracker.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

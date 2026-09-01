@@ -36,8 +36,7 @@ void main(void)
     Ultrasonic_Init(); // 初始化超声波传感器
     ADC_Init();        // 初始化ADC（用于测量电池电压）
 
-    Timer0Init1ms();  // 配置Timer0 1ms中断，用于 tickMs 计时等
-    Timer3Init10us(); // 配置Timer3 10us中断，驱动非阻塞超声波测距
+    Timer0Init1ms(); // 配置Timer0 1ms中断，用于 tickMs 计时等
 
     EA = 1; // 使能全局中断
 
@@ -45,8 +44,8 @@ void main(void)
 
     while (1)
     {
-        v
-            printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
+
+        printf("battary: %.2fv\r\n", ADC_Battary_Voltage());
 
         // UART1 串口调试（字符串命令，如 FORWARD/FW/STOP 等）：
         // UART1RxProcess();   // 串口接收超时判断：检测到一帧数据接收是否完成

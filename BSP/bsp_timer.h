@@ -6,6 +6,7 @@
  *          - Timer1Init1ms()：Timer1 1ms 定时中断初始化。
  *          - tickMs：由 Timer0 中断每 1ms 递增的毫秒计数器，供主循环非阻塞时间调度。
  * @note    Timer0 与 Timer1 的中断服务函数定义在 bsp_timer.c 中，本模块不对外暴露。
+ * @note    Timer3 已改由超声波模块（bsp_ultrasonic）用作回波计时，本模块不再初始化。
  */
 #ifndef BSP_TIMER_H
 #define BSP_TIMER_H
@@ -29,13 +30,5 @@ void Timer0Init1ms(void);
  * @note 使能Timer1中断，优先级0。调用后需开启全局中断（EA = 1）。
  */
 void Timer1Init1ms(void);
-
-/**
- * @brief Timer3初始化（10us定时中断）
- * @note 配置Timer3为16位自动重载模式，时钟源1T，定时初值对应10us中断一次。
- * @note 使能Timer3中断，优先级0。调用后需开启全局中断（EA = 1）。
- * @note 中断服务函数推进非阻塞超声波测距状态机，需配合 bsp_ultrasonic 使用。
- */
-void Timer3Init10us(void);
 
 #endif // BSP_TIMER_H
